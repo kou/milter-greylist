@@ -1,9 +1,9 @@
-# $Id: README,v 1.64 2009/06/29 10:20:00 manu Exp $
+# $Id: README,v 1.65 2009/09/04 13:02:04 manu Exp $
 ###########################################################################
 
 		     ======================================
 		       milter-greylist installation notes 
-		       $Date: 2009/06/29 10:20:00 $
+		       $Date: 2009/09/04 13:02:04 $
 		     ======================================
 
 		       Emmanuel Dreyfus <manu@netbsd.org>
@@ -202,9 +202,9 @@ smtpd_milters = unix:/var/milter-greylist/milter-greylist.sock
 Edit /etc/mail/greylist.conf, and add addr lines for at least
 localhost and all your local network addresses. Here is an example:
 
-acl whitelist addr 127.0.0.0/8
-acl whitelist addr 192.0.2.0/24 
-acl whitelist addr 10.0.0.0/8
+racl whitelist addr 127.0.0.0/8
+racl whitelist addr 192.0.2.0/24 
+racl whitelist addr 10.0.0.0/8
 
 Then consider adding addresses of all the friendly networks you get
 mail from. By friendly networks, we mean networks with no spammers:
@@ -212,6 +212,9 @@ Universities are usually friendly, some companies are friendly,
 some others are not, and dial-up and ADSL ISPs are definitively not
 friendly at all.
 
+For the sake of completeness, "racl" stands for RCPT-stage ACL. This
+rule is evaluated on each of the RCPT stages of the SMTP transaction. 
+milter-greylist also supports "dacl", evaluated once after DATA stage.
 
  5 Trying it out for a few users 
  ===============================
@@ -219,15 +222,15 @@ friendly at all.
 Add some rcpt access-lists to /etc/mail/greylist.conf for the users 
 that want to try milter-greylist filtering. Here is an example:
 
-acl greylist rcpt John.Doe@example.net 
-acl greylist rcpt webmaster@example.net 
-acl greylist rcpt postmaster@example.net
+racl greylist rcpt John.Doe@example.net 
+racl greylist rcpt webmaster@example.net 
+racl greylist rcpt postmaster@example.net
 
 Then finish your ACL with the default rule: here, anything that
 is not for John.Doe@example.net, webmaster@example.net, or
 postmaster@example.net will not get greylisted:
 
-acl whitelist default
+racl whitelist default
 
 Now you can start milter-greylist:
 
@@ -261,23 +264,23 @@ disables this feature.
  6 Running it for the whole site 
  ===============================
 
-Remove the "acl greylist rcpt ..." lines from /etc/mail/greylist.conf, 
-and replace "acl whitelist default" by
+Remove the "racl greylist rcpt ..." lines from /etc/mail/greylist.conf, 
+and replace "racl whitelist default" by
 
-acl greylist default
+racl greylist default
 
 Now greylisting is enabled for every recipient. If some of your 
-users don't want greylisting, add a "acl whitelist rcpt" line for them 
+users don't want greylisting, add a "racl whitelist rcpt" line for them 
 in /etc/mail/greylist.conf. Make sure you put it before 
-"acl greylist default": ordering does matter, as the ACL rules are
+"racl greylist default": ordering does matter, as the ACL rules are
 evaluated on a first match wins basis.
 
 If your mail server handles several domains and you want to enable
 milter-greylist for a whole domain but not for everyone, this is 
 possible, just use a regular expression:
 
-acl greylist rcpt /.*@example\.net/
-acl whitelist default
+racl greylist rcpt /.*@example\.net/
+racl whitelist default
 
 
  7 Lists and per-ACL settings
@@ -286,8 +289,8 @@ acl whitelist default
 It is possible to have per-ACL greylisting and autowhitelisting
 settings:
 
-acl greylist rcpt /.*@example\.net/ delay 15m autowhite 3d
-acl greylist default delay 30m autowhite 1d
+racl greylist rcpt /.*@example\.net/ delay 15m autowhite 3d
+racl greylist default delay 30m autowhite 1d
 
 Here, all messages to domain example.net will have a greylisting delay
 of 15 minutes and will be autowhitelisted for 3 days, while messages
@@ -298,8 +301,8 @@ milter-greylist is now also able to use lists, which is very useful for
 factoring rules:
 
 list "users" rcpt { user1@example.com user2@example.com user3@example.com }
-acl greylist list "users"
-acl whitelist default
+racl greylist list "users"
+racl whitelist default
 
 Here message sent to members of the "users" list will be greylisted, while
 other messages will not.
@@ -375,14 +378,14 @@ DSL and cable pools). You would do this:
 # if IP 192.0.2.18 is positive, then nslookup of 18.2.0.192.dnsbl.sorbs.net 
 # returns 127.0.0.10
 dnsrbl "SORBS DUN" dnsbl.sorbs.net 127.0.0.10
-acl greylist dnsrbl "SORBS DUN"
+racl greylist dnsrbl "SORBS DUN"
 
 You can combine it with variable greylisting delays so that dynamic hosts
 get a greylisting delay of 12 hours while other hosts only get 15 minutes:
 
 dnsrbl "SORBS DUN" dnsbl.sorbs.net 127.0.0.10
-acl greylist dnsrbl "SORBS DUN" delay 12h
-acl greylist default delay 15m
+racl greylist dnsrbl "SORBS DUN" delay 12h
+racl greylist default delay 15m
 
 This feature was introduced in milter-greylist 2.1.7 and may not be
 fully stable. You need the --enable-dnsrbl flag to configure to use 
@@ -456,7 +459,7 @@ http://mail.cc.umanitoba.ca/drac/
 ACL can cause URL lookups:
 
 urlcheck "mytest" "http://www.example.net/mgl.php?rcpt=%r+ip=%i" 10
-acl greylist urlcheck "mytest"
+racl greylist urlcheck "mytest"
 
 For each ACL evaluation will spawn a request to
 http://www.example.net/mgl.php?rcpt=%r+ip=%i, with
@@ -504,8 +507,8 @@ directory:
 
 ldapconf "ldapi:// ldaps://ldap.example.net"
 ldapcheck "mytest" "ldap://ldap.example.net/o=example?whitelist?sub?mail=%r"
-acl whitelist ldapcheck "mytest" $whitelist "%f"
-acl greylist default
+racl whitelist ldapcheck "mytest" $whitelist "%f"
+racl greylist default
 
 The ldapconf statement is used to list LDAP servers. If one goes down, 
 another will be contacted. For ldaps:// URLs, certificate information
@@ -523,13 +526,13 @@ Using the "tls" clause, an ACL could match any email that succeeded TLS
 check in sendmail (STARTTLS giving "verify=OK"). This assumes you already
 have TLS working in sendmail.
 
-acl whitelist tls "DN1"
-acl whitelist tls "DN2"
+racl whitelist tls "DN1"
+racl whitelist tls "DN2"
 
 or
 
 list "trusted" tls { "DN1" "DN2" }
-acl whitelist list "trusted"
+racl whitelist list "trusted"
 
 A DN has a special syntax.
 If you used the 'update_tls' script provided with sendmail to generate

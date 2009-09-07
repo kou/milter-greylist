@@ -15,7 +15,7 @@
 %token LOGFAC_LOCAL0 LOGFAC_LOCAL1 LOGFAC_LOCAL2 LOGFAC_LOCAL3 LOGFAC_LOCAL4
 %token LOGFAC_LOCAL5 LOGFAC_LOCAL6 LOGFAC_LOCAL7 P0F P0FSOCK DKIMCHECK
 %token SPAMDSOCK SPAMDSOCKT SPAMD DOMAINEXACT ADDHEADER NOLOG LDAPBINDDN 
-%token LDAPBINDPW 
+%token LDAPBINDPW TARPIT TARPIT_SCOPE SESSION COMMAND
 
 %{
 #include "config.h"
@@ -23,7 +23,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: conf_yacc.y,v 1.102 2009/06/08 23:40:06 manu Exp $");
+__RCSID("$Id: conf_yacc.y,v 1.103 2009/09/07 12:56:54 manu Exp $");
 #endif
 #endif
 
@@ -131,6 +131,8 @@ lines	:	lines netblock '\n'
 	|	lines testmode '\n' 
 	|	lines autowhite '\n'
 	|	lines greylist '\n'
+	|	lines tarpit '\n'
+	|	lines tarpit_scope '\n'
 	|	lines pidfile '\n'
 	|	lines dumpfile '\n'
 	|	lines subnetmatch '\n'
@@ -389,9 +391,58 @@ greylist:	GREYLIST TDELAY	{ if (C_NOTFORCED(C_DELAY))
 					    (time_t)humanized_atoi($2);
 				}
 	;
+tarpit:		TARPIT TDELAY 	{
+#ifdef HAVE_DATA_CALLBACK
+			if (C_NOTFORCED(C_TARPIT))
+				conf.c_tarpit = (time_t)humanized_atoi($2);
+#else
+			mg_log(LOG_ERR, "libmilter >= 8.14 is required "
+					"for tarpit, line %d",
+					conf_line);
+			exit(EX_DATAERR);
+#endif
+		}
+	|	TARPIT TNUMBER	{
+#ifdef HAVE_DATA_CALLBACK
+			if (C_NOTFORCED(C_TARPIT))
+				conf.c_tarpit = (time_t)humanized_atoi($2);
+#else
+			mg_log(LOG_ERR, "libmilter >= 8.14 is required "
+					"for tarpit, line %d",
+					conf_line);
+			exit(EX_DATAERR);
+#endif
+		}
+	;
+tarpit_scope:
+		TARPIT_SCOPE SESSION {
+#ifdef HAVE_DATA_CALLBACK
+			if (C_NOTFORCED(C_TARPIT_SCOPE))
+				conf.c_tarpit_scope = TAP_SESSION;
+#else
+			mg_log(LOG_ERR, "libmilter >= 8.14 is required "
+					"for tarpit_scope, line %d",
+					conf_line);
+			exit(EX_DATAERR);
+#endif
+		}
+	|	TARPIT_SCOPE COMMAND {
+#ifdef HAVE_DATA_CALLBACK
+			if (C_NOTFORCED(C_TARPIT_SCOPE))
+				conf.c_tarpit_scope = TAP_COMMAND;
+#else
+			mg_log(LOG_ERR, "libmilter >= 8.14 is required "
+					"for tarpit_scope, line %d",
+					conf_line);
+			exit(EX_DATAERR);
+#endif
+		}
+	;
 verbose:	VERBOSE	{ if (C_NOTFORCED(C_DEBUG)) conf.c_debug = 1; }
 	;
-dump_no_time_translation:	DUMP_NO_TIME_TRANSLATION	{ conf.c_dump_no_time_translation = 1; }
+dump_no_time_translation:	DUMP_NO_TIME_TRANSLATION	{ 
+			conf.c_dump_no_time_translation = 1; 
+			}
 	;
 logexpired:   LOGEXPIRED { conf.c_logexpired = 1; }
 	;
@@ -811,6 +862,7 @@ acl_clause:	helo_clause
 	|	propregex_clause
 	|	spamd_clause
 	|	spamd_score_clause
+	|	tarpit_clause
 	;
 
 acl_values:	acl_value
@@ -819,6 +871,7 @@ acl_values:	acl_value
 
 acl_value:	greylist_value
 	|	autowhite_value
+	|	tarpit_scope_value
 	|	code_value
 	|	ecode_value
 	|	msg_value
@@ -833,6 +886,30 @@ greylist_value:		GLXDELAY TDELAY
 	;
 autowhite_value:	AUTOWHITE TDELAY 
 			    { acl_add_autowhite((time_t)humanized_atoi($2)); }
+	;
+tarpit_scope_value:
+			TARPIT_SCOPE SESSION
+			    {
+#ifdef HAVE_DATA_CALLBACK
+				acl_add_tarpit_scope(TAP_SESSION);
+#else
+				mg_log(LOG_ERR, "libmilter >= 8.14 is required "
+						"for tarpit_scope, line %d",
+						conf_line);
+				exit(EX_DATAERR);
+#endif
+			    }
+	|		TARPIT_SCOPE COMMAND
+			    {
+#ifdef HAVE_DATA_CALLBACK
+				acl_add_tarpit_scope(TAP_COMMAND);
+#else
+				mg_log(LOG_ERR, "libmilter >= 8.14 is required "
+						"for tarpit_scope, line %d",
+						conf_line);
+				exit(EX_DATAERR);
+#endif
+			    }
 	;
 flush_value:		FLUSHADDR { acl_add_flushaddr(); }
 	;
@@ -1003,7 +1080,18 @@ header_clause:	GLHEADER QSTRING {
 
 headerregex_clause:	GLHEADER REGEX { acl_add_clause(AC_HEADER_RE, $2); }
 	;
-
+tarpit_clause:		TARPIT TDELAY {
+#ifdef HAVE_DATA_CALLBACK
+				time_t t = humanized_atoi($2);
+				acl_add_clause(AC_TARPIT, &t);
+#else
+				mg_log(LOG_ERR, "libmilter >= 8.14 is required "
+						"for tarpit, line %d",
+						conf_line);
+				exit(EX_DATAERR);
+#endif
+			}
+	;
 body_clause:		BODY QSTRING {
 				char qstring[QSTRLEN + 1];
 

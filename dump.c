@@ -1,4 +1,4 @@
-/* $Id: dump.c,v 1.38 2009/04/21 03:28:45 manu Exp $ */
+/* $Id: dump.c,v 1.39 2009/09/07 12:56:54 manu Exp $ */
 
 /*
  * Copyright (c) 2004 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: dump.c,v 1.38 2009/04/21 03:28:45 manu Exp $");
+__RCSID("$Id: dump.c,v 1.39 2009/09/07 12:56:54 manu Exp $");
 #endif
 #endif
 
@@ -280,12 +280,14 @@ dump_perform(final)
 	dump_header(dump);
 	greylisted_count = pending_textdump(dump);
 
-	done = greylisted_count.pending + greylisted_count.autowhite;
+	done = greylisted_count.pending + greylisted_count.autowhite + 
+	       greylisted_count.tarpit;
 
 	fprintf(dump, "#\n# Summary: %d records, %d greylisted, "
-		"%d whitelisted\n#\n", done,
+		"%d whitelisted, %d tarpitted\n#\n", done,
 		greylisted_count.pending, 
-		greylisted_count.autowhite);
+		greylisted_count.autowhite,
+		greylisted_count.tarpit);
 
 	/*
 	 * Ensure that the data is really flushed to disk.

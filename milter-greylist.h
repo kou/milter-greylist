@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.h,v 1.77 2008/11/26 05:20:13 manu Exp $ */
+/* $Id: milter-greylist.h,v 1.78 2009/09/07 12:56:54 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -145,6 +145,11 @@ typedef union {
 
 #endif
 
+typedef enum {
+	TAP_SESSION,
+	TAP_COMMAND
+}  tarpit_scope_t;
+
 struct smtp_reply {
 	int sr_whitelist;
 	int sr_nowhitelist;
@@ -154,6 +159,8 @@ struct smtp_reply {
 	char *sr_acl_id;
 	time_t sr_delay;
 	time_t sr_autowhite;
+	time_t sr_tarpit;
+	tarpit_scope_t sr_tarpit_scope;
 	char *sr_code;
 	char *sr_ecode;
 	char *sr_msg;
@@ -221,6 +228,8 @@ struct mlfi_priv {
 	int priv_spamd_flags;
 	int priv_spamd_score10;
 #endif
+	time_t priv_max_tarpitted;
+	time_t priv_total_tarpitted;
 };
 
 sfsistat mlfi_connect(SMFICTX *, char *, _SOCK_ADDR *);
@@ -231,7 +240,11 @@ sfsistat mlfi_header(SMFICTX *, char *, char *);
 sfsistat mlfi_eoh(SMFICTX *);
 sfsistat mlfi_body(SMFICTX *, unsigned char *, size_t);
 sfsistat mlfi_eom(SMFICTX *);
+sfsistat mlfi_abort(SMFICTX *);
 sfsistat mlfi_close(SMFICTX *);
+#ifdef HAVE_DATA_CALLBACK
+sfsistat mlfi_data(SMFICTX *);
+#endif
 void usage(char *);
 int humanized_atoi(char *);
 #ifndef USE_POSTFIX

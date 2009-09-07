@@ -1,4 +1,4 @@
-/* $Id: pending.c,v 1.88 2009/04/21 03:28:45 manu Exp $ */
+/* $Id: pending.c,v 1.89 2009/09/07 12:56:54 manu Exp $ */
 
 /*
  * Copyright (c) 2004 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: pending.c,v 1.88 2009/04/21 03:28:45 manu Exp $");
+__RCSID("$Id: pending.c,v 1.89 2009/09/07 12:56:54 manu Exp $");
 #endif
 #endif
 
@@ -119,7 +119,8 @@ pending_timeout(pending, now)
 	long pt = pending->p_tv.tv_sec;
 	long nt = now->tv_sec;
 
-	if ((pending->p_type == T_PENDING && nt - pt > conf.c_timeout) ||
+	if (((pending->p_type == T_PENDING || pending->p_type == T_TARPIT) &&
+	     nt - pt > conf.c_timeout) ||
 	    (pending->p_type == T_AUTOWHITE && pt < nt)) {
 		if (conf.c_debug || conf.c_logexpired) {
 			mg_log(LOG_DEBUG,
@@ -155,6 +156,7 @@ pending_get(sa, salen, from, rcpt, date, tupletype)
 
 	bzero((void *)pending, sizeof(pending));
 	pending->p_tv.tv_sec = date;
+	pending->p_tarpit.tv_sec = 0;
 	pending->p_type = tupletype;
 
 	if ((pending->p_sa = malloc(salen)) == NULL) {
@@ -430,6 +432,9 @@ pending_check(sa, salen, from, rcpt, remaining, elapsed, queueid, delay, aw)
 			}
 			break;
 
+		case T_TARPIT:
+			break;
+
 		default:			/* Error */
 			break;
 		}
@@ -472,6 +477,151 @@ out_aw:
 	return T_AUTOWHITE;
 }
 
+time_t
+pending_tarpitted(sa, salen, from, rcpt)
+	struct sockaddr *sa;
+	socklen_t salen;
+	char *from;
+	char *rcpt;
+{
+	struct pending *pending;
+	struct pending *next;
+	struct timeval tv;
+	time_t now;
+	int dirty = 0;
+	struct pending_bucket *b;
+	ipaddr *mask = NULL;
+	time_t tarpitted = -1;
+
+	(void)gettimeofday(&tv, NULL);
+	now = tv.tv_sec;
+
+	b = &pending_buckets[BUCKET_HASH(sa, from, rcpt, PENDING_BUCKETS)];
+	PENDING_LOCK;
+	for (pending = TAILQ_FIRST(&b->b_pending_head); 
+	    pending; pending = next) {
+		next = TAILQ_NEXT(pending, pb_list);
+		/* 
+		 * flag stale greylist and aw entries
+		 */
+		if (pending_timeout(pending, &tv)) { 
+			++dirty;
+			continue;
+		}
+
+		switch (pending->p_sa->sa_family) {
+		case AF_INET:
+			mask = (ipaddr *)&conf.c_match_mask;
+			break;
+#ifdef AF_INET6
+		case AF_INET6:
+			mask = (ipaddr *)&conf.c_match_mask6;
+			break;
+#endif
+		}
+
+		/*
+		 * Look for our entry.
+		 */
+		if (ip_match(sa, pending->p_sa, mask) &&
+		    (strcmp(from, pending->p_from) == 0) &&
+		    (strcmp(rcpt, pending->p_rcpt) == 0)) {
+			if (pending->p_type == T_TARPIT)
+				tarpitted = pending->p_tarpit.tv_sec;
+			break;
+		}
+	}
+	PENDING_UNLOCK;
+
+	if (dirty) {
+		dump_touch(dirty);
+		dump_flush();
+	}
+
+	return tarpitted;
+}
+
+void
+pending_update(sa, salen, from, rcpt, time, update_type)
+	struct sockaddr *sa;
+	socklen_t salen;
+	char *from;
+	char *rcpt;
+	time_t time;
+	tuple_update_type_t update_type;
+{
+	struct pending *pending;
+	struct pending *next;
+	struct timeval tv;
+	time_t now;
+	int dirty = 0;
+	struct pending_bucket *b;
+	ipaddr *mask = NULL;
+	time_t date;
+
+	(void)gettimeofday(&tv, NULL);
+	now = tv.tv_sec;
+
+	b = &pending_buckets[BUCKET_HASH(sa, from, rcpt, PENDING_BUCKETS)];
+	PENDING_LOCK;
+	for (pending = TAILQ_FIRST(&b->b_pending_head); 
+	    pending; pending = next) {
+		next = TAILQ_NEXT(pending, pb_list);
+		/* 
+		 * flag stale greylist and aw entries
+		 */
+		if (pending_timeout(pending, &tv)) { 
+			++dirty;
+			continue;
+		}
+
+		switch (pending->p_sa->sa_family) {
+		case AF_INET:
+			mask = (ipaddr *)&conf.c_match_mask;
+			break;
+#ifdef AF_INET6
+		case AF_INET6:
+			mask = (ipaddr *)&conf.c_match_mask6;
+			break;
+#endif
+		}
+
+		/*
+		 * Look for our entry.
+		 */
+		if (ip_match(sa, pending->p_sa, mask) &&
+		    (strcmp(from, pending->p_from) == 0) &&
+		    (strcmp(rcpt, pending->p_rcpt) == 0)) {
+			switch (update_type) {
+			case TU_AUTOWHITE:
+				date = now + time;
+				peer_delete(pending, date);
+				pending_put(pending, date);
+				break;
+			case TU_TARPIT:
+				if (pending->p_type == T_TARPIT) {
+					if (time < pending->p_tarpit.tv_sec)
+						pending->p_tarpit.tv_sec = time;
+				} else {
+					pending->p_type = T_TARPIT;
+					pending->p_tarpit.tv_sec = time;
+				}
+				break;
+			default:
+				break;
+			}
+			++dirty;
+
+			break;
+		}
+	}
+	PENDING_UNLOCK;
+	if (dirty) {
+		dump_touch(dirty);
+		dump_flush();
+	}
+}
+
 tuple_cnt_t
 pending_textdump(stream)
 	FILE *stream;
@@ -486,12 +636,14 @@ pending_textdump(stream)
 
 	done.pending = 0;
 	done.autowhite = 0;
+	done.tarpit = 0;
 
 	gettimeofday(&now, NULL);
 
 	fprintf(stream, "\n\n#\n# stored tuples\n#\n");
-	fprintf(stream, "# Sender IP\t%s\t%s\tTime accepted\n", 
-	    "Sender e-mail", "Recipient e-mail");
+	fprintf(stream, "# Sender IP\t%s\t%s\tTime accepted\t"
+		"Unsuccessful shortest tarpit\n", 
+		"Sender e-mail", "Recipient e-mail");
 
 	PENDING_LOCK;
 	for (pending = TAILQ_FIRST(&pending_head); pending; pending = next) {
@@ -501,26 +653,57 @@ pending_textdump(stream)
 			continue;
 
 		if (conf.c_dump_no_time_translation) {
-			fprintf(stream, "%s\t%s\t%s\t%ld %s\n", 
-			    pending->p_addr, pending->p_from, 
-			    pending->p_rcpt, (long)pending->p_tv.tv_sec,
-			    pending->p_type == T_AUTOWHITE ? "AUTO" : "");
+			if (pending->p_type == T_AUTOWHITE) {
+				fprintf(stream, "%s\t%s\t%s\t%ld AUTO\n", 
+				    pending->p_addr, pending->p_from, 
+				    pending->p_rcpt, 
+				    (long)pending->p_tv.tv_sec);
+			} else if (pending->p_type == T_PENDING) {
+				fprintf(stream, "%s\t%s\t%s\t%ld \n", 
+				    pending->p_addr, pending->p_from, 
+				    pending->p_rcpt, 
+				    (long)pending->p_tv.tv_sec);
+			} else {
+				fprintf(stream, 
+				    "%s\t%s\t%s\t%ld\t%ld TARPIT\n", 
+				    pending->p_addr, pending->p_from, 
+				    pending->p_rcpt, 
+				    (long)pending->p_tv.tv_sec,
+				    (long)pending->p_tarpit.tv_sec);
+			}
 		} else {
 			ti = pending->p_tv.tv_sec;
 			localtime_r(&ti, &tm);
 			strftime(textdate, DATELEN, "%Y-%m-%d %T", &tm);
-		
-			fprintf(stream, "%s\t%s\t%s\t%ld%s# %s\n", 
-			    pending->p_addr, pending->p_from, 
-			    pending->p_rcpt, (long)pending->p_tv.tv_sec,
-			    pending->p_type == T_AUTOWHITE ? " AUTO " : " ",
-			    textdate);
+
+			if (pending->p_type == T_AUTOWHITE) {
+				fprintf(stream, "%s\t%s\t%s\t%ld AUTO # %s\n", 
+				    pending->p_addr, pending->p_from, 
+				    pending->p_rcpt, 
+				    (long)pending->p_tv.tv_sec,
+				    textdate);
+			} else if (pending->p_type == T_PENDING) {
+				fprintf(stream, "%s\t%s\t%s\t%ld # %s\n", 
+				    pending->p_addr, pending->p_from, 
+				    pending->p_rcpt, 
+				    (long)pending->p_tv.tv_sec,
+				    textdate);
+			} else {
+				fprintf(stream, 
+				    "%s\t%s\t%s\t%ld\t%ld TARPIT # %s\n", 
+				    pending->p_addr, pending->p_from, 
+				    pending->p_rcpt, 
+				    (long)pending->p_tv.tv_sec,
+				    (long)pending->p_tarpit.tv_sec, textdate);
+			}
 		}
 
 		if (pending->p_type == T_AUTOWHITE)
 			done.autowhite++;
-		else
+		else if (pending->p_type == T_PENDING)
 			done.pending++;
+		else
+			done.tarpit++;
 	}
 	PENDING_UNLOCK;
 

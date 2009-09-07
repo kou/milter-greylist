@@ -1,4 +1,4 @@
-%token IPADDR IP6ADDR EMAIL TIME AUTO GARBAGE
+%token IPADDR IP6ADDR EMAIL TIME AUTO TARPIT GARBAGE
 
 %{
 #include "config.h"
@@ -6,7 +6,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: dump_yacc.y,v 1.21 2009/04/19 00:55:32 manu Exp $");
+__RCSID("$Id: dump_yacc.y,v 1.22 2009/09/07 12:56:54 manu Exp $");
 #endif
 #endif
 
@@ -41,6 +41,7 @@ void dump_error(char *);
 %%
 lines	:	lines greyentry '\n' 
 	|	lines autoentry '\n'
+	|	lines tarpitentry '\n'
 	|	lines '\n'
 	|	error '\n'		{ yyerrok; }
 	|
@@ -67,6 +68,24 @@ autoentry :	IPADDR EMAIL EMAIL TIME AUTO {
 #ifdef AF_INET6
 			pending_get(SA(&$1), sizeof(struct sockaddr_in6), $2,
 			    $3, $4, T_AUTOWHITE);
+#else
+			printf("IPv6 is not supported, ignore line %d\n",
+			    dump_line);
+#endif
+		}
+	;
+tarpitentry :	IPADDR EMAIL EMAIL TIME TIME TARPIT {
+			pending_get(SA(&$1), sizeof(struct sockaddr_in), $2,
+			    $3, $4, T_TARPIT);
+			pending_update(SA(&$1), sizeof(struct sockaddr_in), $2,
+			    $3, $5, T_TARPIT);
+		}
+	|	IP6ADDR EMAIL EMAIL TIME TIME TARPIT {
+#ifdef AF_INET6
+			pending_get(SA(&$1), sizeof(struct sockaddr_in6), $2,
+			    $3, $4, T_TARPIT);
+			pending_update(SA(&$1), sizeof(struct sockaddr_in6), $2,
+			    $3, $5, T_TARPIT);
 #else
 			printf("IPv6 is not supported, ignore line %d\n",
 			    dump_line);

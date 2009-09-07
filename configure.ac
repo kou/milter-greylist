@@ -1,4 +1,4 @@
-# $Id: configure.ac,v 1.248 2009/08/14 00:35:33 manu Exp $
+# $Id: configure.ac,v 1.249 2009/09/07 12:56:54 manu Exp $
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
@@ -462,6 +462,11 @@ AC_CHECK_LIB(milter, smfi_register,
         ])
 ])
 
+AC_CHECK_MEMBER([struct smfiDesc.xxfi_data],
+                [CFLAGS=$CFLAGS" -DHAVE_DATA_CALLBACK"],
+                [],
+                [#include <libmilter/mfapi.h>])
+
 # Check if -lpthreads is needed after -lmilter
 AC_MSG_CHECKING([if -lpthread is needed after -lmilter])
 SAVEDLIBS=$LIBS
@@ -760,12 +765,21 @@ AC_DEFINE_UNQUOTED([BUILD_ENV], ["`logname`@`uname -n`:`pwd` `date`"],
 AC_ARG_WITH(user,
 	[  --with-user=USERNAME   The user that will run milter-greylist ],
 	[AC_SUBST(USER, $withval)], [AC_SUBST(USER, root)])
+
+CONFFILE="\${SYSCONFDIR}/mail/greylist.conf"
 AC_ARG_WITH(conffile,  
 	[  --with-conffile=PATH Location of config file],
-	[CFLAGS=$CFLAGS" -DCONFFILE=\\\"$withval\\\""])
+	[CONFFILE="$withval"])
+AC_SUBST(CONFFILE)
+CFLAGS=$CFLAGS" -DCONFFILE=\\\"\${CONFFILE}\\\""
+
+DUMPFILE="\${LOCALSTATEDIR}/milter-greylist/greylist.db"
 AC_ARG_WITH(dumpfile,
 	[  --with-dumpfile=PATH   Location of dump file],
-	[CFLAGS=$CFLAGS" -DDUMPFILE=\\\"$withval\\\""])
+	[DUMPFILE="$withval"])
+AC_SUBST(DUMPFILE)
+CFLAGS=$CFLAGS" -DDUMPFILE=\\\"\${DUMPFILE}\\\""
+
 AC_ARG_WITH(delay,  
 	[  --with-delay=VALUE     Delay before accepting mail],
 	[CFLAGS=$CFLAGS" -DGLDELAY=$withval"])

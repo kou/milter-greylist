@@ -1,9 +1,9 @@
-# $Id: README,v 1.65 2009/09/04 13:02:04 manu Exp $
+# $Id: README,v 1.66 2009/09/07 12:56:54 manu Exp $
 ###########################################################################
 
 		     ======================================
 		       milter-greylist installation notes 
-		       $Date: 2009/09/04 13:02:04 $
+		       $Date: 2009/09/07 12:56:54 $
 		     ======================================
 
 		       Emmanuel Dreyfus <manu@netbsd.org>
@@ -26,11 +26,12 @@ Table of contents:
  13 Using URL checks
  14 Using LDAP natively
  15 Using TLS
- 16 Custom logs
- 17 Packaging
- 18 Things to look at if things get wrong
- 19 Known problems
- 20 License
+ 16 Using tarpit
+ 17 Custom logs
+ 18 Packaging
+ 19 Things to look at if things get wrong
+ 20 Known problems
+ 21 License
 
 Run this command to regenerate a table of contents:
  sed '/^.====/{g;p;};h;d' README
@@ -547,8 +548,84 @@ To find the DN of any certificate, you can use the openssl command:
 
 $ openssl x509 -noout -issuer < some.crt | cut -d' ' -f2- | sed -e 's/ /+20/g'
 
+ 15 Using tarpit
+ ===============
 
- 16 Custom logs
+'tarpit' is an anti-spam technique by lazy response.
+
+  racl whitelist tarpit 65s
+
+This ACL means that clients that can wait a response in
+65s are whitelisted. If the clients access again, they are
+accepted without lazy response because they are in
+auto-whitelist.
+
+If clients that couldn't wait a lazy response access again,
+the ACL doesn't match.
+
+  racl whitelist tarpit 65s
+  racl default greylist
+
+Those ACLs means that clients that can wait a lazy
+response or resend a message are acceptable.
+
+  racl greylist tarpit 10s
+
+This ACL means that clients should wait a response in 10s
+then pass greylist.
+
+If clients that couldn't wait a lazy response access again,
+the ACL doesn't match.
+
+  racl greylist tarpit 10s
+  racl default blacklist
+
+Those ACLs means that clients should wait a lazy response
+and pass greylist. Otherwise they are rejected.
+
+There is a 'tarpit_scope' configuration parameter. It
+controls how to count tarpitted time. Available values are
+'session' and 'command'. 'session' means that tarpitted time
+is counted in a SMTP session scope.  'command' means that
+tarpitted time is counted in an SMTP command (request/response)
+scope. The default is 'session'.
+
+  racl whitelist rcpt user1@example.com tarpit 10s
+  racl whitelist rcpt user2@example.com tarpit 30s
+  racl whitelist rcpt user3@example.com tarpit 15s
+
+It assumes that a client sends a mail to user1@example.com,
+user2@example.com and user3@example.com in a SMTP session
+when those ACLs are used.
+
+'session' case:
+  milter-greylist waits to return a response in
+  10s for user1@example.com. Then milter-greylist waits to
+  return a response in 20s for user2@example.com. 20s is
+  30s (tarpit time for user2@example.com) - 10s (tarpit time
+  for user1@example.com). milter-greylist just wait 20s
+  because milter-greylist had waited 10s. Then
+  milter-greylist doesn't wait to return a response for
+  user3@example.com because total 30s had waited in this
+  SMTP session.
+
+    user1@example.com: tarpit 10s
+    user2@example.com: tarpit 20s
+    user3@example.com: not tarpitted
+
+'command' case:
+  milter-greylist waits to return a response in 10s for
+  user1@example.com. Then milter-greylist waits to return a
+  response in 30s for user2@example.com. Waited time in the
+  previous SMTP command is not counted. Then milter-greylist
+  doesn't wait to return a response for user3@example.com
+  because over 10s had waited in other SMTP command.
+
+    user1@example.com: tarpit 10s
+    user2@example.com: tarpit 30s
+    user3@example.com: not tarpitted
+
+ 17 Custom logs
  ==============
 
 It is possible to monitor milter-greylist activity with a custom log
@@ -574,7 +651,7 @@ or reject
 %A is substituted by the line number of the ACL that caused the decision
 
 
- 17 Packaging
+ 18 Packaging
  ============
 
 milter-greylist is available from NetBSD pkgsrc and FreeBSD ports.
@@ -584,10 +661,11 @@ source tarball: rpmbuild -tb milter-greylist-3.1.4.tgz. You can define
 build_user, build_postfix, build_dnsrbl, build_libbind - for example,
 to build with DNSRBL support and choose smmsp as the user that will run
 milter-greylist, use
-rpmbuild --define "build_user smmsp" --define "build_dnsrbl 1" -tb milter-greylist-3.1.4.tgz
+rpmbuild --define "build_user smmsp" --define "build_dnsrbl 1" \
+  -tb milter-greylist-3.1.4.tgz
 
 
- 18 Things to look at if things get wrong
+ 19 Things to look at if things get wrong
  ========================================
 
 First, read the milter-greylist(8) and greylist.conf(5) man page! :-)
@@ -637,7 +715,7 @@ Examining the tail of this file may reveal problems with domains which
 use multiple MX servers or whose mail is actually served by another site.
 
 
- 19 Known problems
+ 20 Known problems
  =================
 
 If milter-greylist terminates during its operation, first check your
@@ -680,7 +758,7 @@ configure with the CC environment variable set to cc. This
 incompatibility may be fixed in gcc 3.4.
 
 
- 20 License
+ 21 License
  ==========
 
 This software is available under a 3 clauses BSD license:

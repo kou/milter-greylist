@@ -1,3 +1,6 @@
+4.3.4
+	New tarpit feature (Kouhei Sutou)
+	Support make install as unprivilegied user (Kouhei Sutou)
 4.3.3 
 	Fix unallocated memory use for ldapcheck and urlcheck property matching
 	Fix off-by one bug in DATA stage filtering (Pascal Lalonde)

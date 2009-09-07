@@ -1,4 +1,4 @@
-/* $Id: acl.h,v 1.40 2009/06/08 23:40:06 manu Exp $ */
+/* $Id: acl.h,v 1.41 2009/09/07 12:56:54 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -53,7 +53,7 @@ typedef enum { AS_NONE, AS_RCPT, AS_DATA, AS_ANY, } acl_stage_t;
 typedef enum { AT_NONE, AT_STRING, AT_REGEX, AT_NETBLOCK, AT_OPNUM, 
 	       AT_CLOCKSPEC, AT_DNSRBL, AT_URLCHECK, AT_MACRO, 
 	       AT_LIST, AT_PROP, AT_SPF, AT_DKIM, 
-	       AT_LDAPCHECK } acl_data_type_t;
+	       AT_LDAPCHECK, AT_TIME } acl_data_type_t;
 
 typedef enum {
 	AC_NONE,
@@ -110,6 +110,7 @@ typedef enum {
 	AC_P0F_LIST,
 	AC_SA,
 	AC_SASCORE,
+	AC_TARPIT,
 } acl_clause_t;
 
 struct acl_clause;
@@ -143,6 +144,9 @@ struct acl_param {
 	acl_type_t ap_type;
 	time_t ap_delay;
 	time_t ap_autowhite;
+	time_t ap_tarpit;
+	time_t ap_tarpitted;
+	tarpit_scope_t ap_tarpit_scope;
 	int ap_flags;
 	char *ap_id;
 	char *ap_code;
@@ -198,6 +202,7 @@ typedef union acl_data {
 #ifdef USE_DKIM
 	enum spf_status dkim_status;
 #endif
+	time_t time;
 } acl_data_t;
 
 struct acl_clause_rec {
@@ -236,6 +241,8 @@ struct acl_entry {
 	TAILQ_HEAD(,acl_clause) a_clause;
 	time_t a_delay;
 	time_t a_autowhite;
+	time_t a_tarpit;
+	tarpit_scope_t a_tarpit_scope;
 	int a_flags;
 	char *a_code;
 	char *a_ecode;
@@ -258,6 +265,7 @@ void acl_add_clause(acl_clause_t, void *);
 void acl_negate_clause(void);
 void acl_add_delay(time_t);
 void acl_add_autowhite(time_t);
+void acl_add_tarpit_scope(tarpit_scope_t);
 void acl_add_flushaddr(void);
 void acl_add_nolog(void);
 void acl_add_id(char *);
@@ -276,6 +284,8 @@ int emailcmp(char *, char *);
 int acl_netblock_filter(acl_data_t *, acl_stage_t, 
 			struct acl_param *, struct mlfi_priv *);
 int acl_list_filter(acl_data_t *, acl_stage_t, 
+		    struct acl_param *, struct mlfi_priv *);
+int acl_tarpit_filter(acl_data_t *, acl_stage_t,
 		    struct acl_param *, struct mlfi_priv *);
 int acl_helo_strstr(acl_data_t *, acl_stage_t, 
 		    struct acl_param *, struct mlfi_priv *);
@@ -352,4 +362,5 @@ int acl_modify_by_prop(char *, char *, struct acl_param *);
 #define	EXF_DKIM	(1 << 28)
 #define EXF_P0F		(1 << 29)
 #define EXF_SA		(1 << 30)
+#define EXF_TARPIT	(1 << 31)
 #endif /* _ACL_H_ */

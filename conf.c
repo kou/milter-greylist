@@ -1,4 +1,4 @@
-/* $Id: conf.c,v 1.62 2009/04/19 00:55:32 manu Exp $ */
+/* $Id: conf.c,v 1.63 2009/09/07 12:56:54 manu Exp $ */
 
 /*
  * Copyright (c) 2004 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: conf.c,v 1.62 2009/04/19 00:55:32 manu Exp $");
+__RCSID("$Id: conf.c,v 1.63 2009/09/07 12:56:54 manu Exp $");
 #endif
 #endif
 
@@ -441,6 +441,8 @@ conf_defaults(c)
 	c->c_testmode = 0;
 	c->c_delay = GLDELAY;
 	c->c_autowhite_validity = AUTOWHITE_VALIDITY;
+	c->c_tarpit = TARPIT_DURATION;
+	c->c_tarpit_scope = TAP_SESSION;
 	c->c_pidfile = NULL;
 	c->c_dumpfile = DUMPFILE;
 	c->c_dumpfile_mode = -1;

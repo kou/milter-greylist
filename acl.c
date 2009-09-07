@@ -1,4 +1,4 @@
-/* $Id: acl.c,v 1.93 2009/08/14 00:09:02 manu Exp $ */
+/* $Id: acl.c,v 1.94 2009/09/07 12:56:54 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: acl.c,v 1.93 2009/08/14 00:09:02 manu Exp $");
+__RCSID("$Id: acl.c,v 1.94 2009/09/07 12:56:54 manu Exp $");
 #endif
 #endif
 
@@ -113,6 +113,7 @@ char *acl_print_regex(acl_data_t *, char *, size_t);
 char *acl_print_list(acl_data_t *, char *, size_t);
 char *acl_print_null(acl_data_t *, char *, size_t);
 char *acl_print_opnum(acl_data_t *, char *, size_t);
+char *acl_print_time(acl_data_t *, char *, size_t);
 int acl_opnum_cmp(int, enum operator, int);
 void acl_free_entry(struct acl_entry *);
 void acl_free_netblock(acl_data_t *);
@@ -126,6 +127,7 @@ void acl_add_body_regex(acl_data_t *, void *);
 void acl_add_macro(acl_data_t *, void *);
 void acl_add_opnum(acl_data_t *, void *);
 void acl_add_opnum_body(acl_data_t *, void *);
+void acl_add_time(acl_data_t *, void *);
 void acl_add_list(acl_data_t *, void *);
 char *acl_print_macro(acl_data_t *, char *, size_t);
 #ifdef USE_DNSRBL
@@ -378,6 +380,12 @@ struct acl_clause_rec acl_clause_rec[] = {
 	  AT_OPNUM, AC_NONE, AC_NONE,  EXF_SA,
 	  acl_print_opnum, acl_add_opnum, NULL, spamd_score },
 #endif
+#ifdef HAVE_DATA_CALLBACK
+	{ AC_TARPIT, UNIQUE, AS_ANY, "tarpit",
+	  AT_TIME, AC_NONE, AC_NONE, EXF_TARPIT,
+	  acl_print_time, acl_add_time,
+	  NULL, acl_tarpit_filter },
+#endif
 };
 
 struct {
@@ -547,6 +555,22 @@ acl_body_strstr(ad, stage, ap, priv)
 
 	return 0;
 }
+
+int
+acl_tarpit_filter(ad, stage, ap, priv)
+	acl_data_t *ad;
+	acl_stage_t stage;
+	struct acl_param *ap;
+	struct mlfi_priv *priv;
+{
+	ap->ap_tarpitted = pending_tarpitted(SA(&priv->priv_addr),
+					     priv->priv_addrlen,
+					     priv->priv_from,
+					     priv->priv_cur_rcpt);
+	ap->ap_tarpit = ad->time;
+	return ap->ap_tarpitted == (time_t)-1 || ap->ap_tarpitted > 0;
+}
+
 
 int
 myregexec(priv, ad, ap, string)
@@ -1006,6 +1030,16 @@ acl_print_opnum(ad, buf, len)
 	return buf;
 }
 
+char *
+acl_print_time(ad, buf, len)
+	acl_data_t *ad;
+	char *buf;
+	size_t len;
+{
+	snprintf(buf, len, "%ld", (long)ad->time);
+	return buf;
+}
+
 void
 acl_add_string(ad, data)
 	acl_data_t *ad;
@@ -1106,6 +1140,16 @@ acl_add_regex(ad, data)
 }
 
 void
+acl_add_time(ad, data)
+	acl_data_t *ad;
+	void *data;
+{
+	time_t *t = (time_t *)data;
+	ad->time = *t;
+	return;
+}
+
+void
 acl_free_string(ad)
 	acl_data_t *ad;
 {
@@ -1135,6 +1179,8 @@ acl_init_entry(void)
 	memset(acl, 0, sizeof(*acl));
 	acl->a_delay = -1;
 	acl->a_autowhite = -1;
+	acl->a_tarpit = -1;
+	acl->a_tarpit_scope = -1;
 	TAILQ_INIT(&acl->a_clause);
 
 	return acl;
@@ -1841,6 +1887,9 @@ acl_filter(stage, ctx, priv)
 		ap.ap_type = acl->a_type;
 		ap.ap_delay = acl->a_delay;
 		ap.ap_autowhite = acl->a_autowhite;
+		ap.ap_tarpit = acl->a_tarpit;
+		ap.ap_tarpitted = -1;
+		ap.ap_tarpit_scope = acl->a_tarpit_scope;
 		ap.ap_flags = acl->a_flags;
 		ap.ap_id = acl->a_id;
 		ap.ap_code = acl->a_code;
@@ -1922,6 +1971,15 @@ acl_filter(stage, ctx, priv)
 		priv->priv_sr.sr_autowhite =
 		    (ap.ap_autowhite != -1) ? 
 		    ap.ap_autowhite : conf.c_autowhite_validity;
+		priv->priv_sr.sr_tarpit =
+		    (ap.ap_tarpit != -1) ? ap.ap_tarpit : conf.c_tarpit;
+		priv->priv_sr.sr_tarpit_scope =
+		    (ap.ap_tarpit_scope != -1) ?
+		    ap.ap_tarpit_scope : conf.c_tarpit_scope;
+		if (ap.ap_tarpitted > priv->priv_max_tarpitted)
+			priv->priv_max_tarpitted = ap.ap_tarpitted;
+		if (ap.ap_tarpitted > priv->priv_total_tarpitted)
+			priv->priv_total_tarpitted = ap.ap_tarpitted;
 
 		if (ap.ap_id) {
 			priv->priv_sr.sr_acl_id = strdup(ap.ap_id);
@@ -2015,6 +2073,8 @@ acl_filter(stage, ctx, priv)
 
 		priv->priv_sr.sr_delay = conf.c_delay;
 		priv->priv_sr.sr_autowhite = conf.c_autowhite_validity;
+		priv->priv_sr.sr_tarpit = conf.c_tarpit;
+		priv->priv_sr.sr_tarpit_scope = conf.c_tarpit_scope;
 	}
 
 	if ((retval & EXF_NOLOG) == 0 && retval & EXF_WHITELIST) {
@@ -2085,6 +2145,12 @@ acl_filter(stage, ctx, priv)
 			ADD_REASON(whystr, tmpstr);
 		}		
 #endif
+		if (retval & EXF_TARPIT) {
+			snprintf(tmpstr, sizeof(tmpstr),
+			     "tarpit is%s requested",
+			    (noretval & EXF_TARPIT) ? notstr : vstr);
+			ADD_REASON(whystr, tmpstr);
+		}
 		if (retval & EXF_DEFAULT) {
 			ADD_REASON(whystr, "this is the default action");
 		}
@@ -2254,6 +2320,14 @@ acl_entry(entrystr, len, acl)
 		mystrlcat(entrystr, tempstr, len);
 	}
 
+	if (acl->a_tarpit_scope != -1) {
+		snprintf(tempstr, sizeof(tempstr),
+		    "[tarpit-scope \"%s\"] ",
+		    (acl->a_tarpit_scope == TAP_SESSION) ?
+		    "session" : "command");
+		mystrlcat(entrystr, tempstr, len);
+	}
+
 	if (acl->a_flags & A_FLUSHADDR) {
 		snprintf(tempstr, sizeof(tempstr), "[flushaddr] ");
 		mystrlcat(entrystr, tempstr, len);
@@ -2363,6 +2437,25 @@ acl_add_autowhite(delay)
 		
 	if (conf.c_debug || conf.c_acldebug)
 		mg_log(LOG_DEBUG, "load acl autowhite %ld", (long)delay);
+
+	return;
+}
+
+void
+acl_add_tarpit_scope(scope)
+	tarpit_scope_t scope;
+{
+	if (gacl->a_tarpit_scope != -1) {
+		mg_log(LOG_ERR,
+		    "tarpit_scope specified twice in ACL line %d", conf_line);
+		exit(EX_DATAERR);
+	}
+
+	gacl->a_tarpit_scope = scope;
+
+	if (conf.c_debug || conf.c_acldebug)
+		mg_log(LOG_DEBUG, "load acl tarpit_scope %s",
+		   (scope == TAP_SESSION) ? "session" : "command");
 
 	return;
 }
@@ -2556,7 +2649,7 @@ void
 }
 
 int
- acl_modify_by_prop(key, value, ap)
+acl_modify_by_prop(key, value, ap)
 	char *key;
 	char *value;
 	struct acl_param *ap;
@@ -2590,6 +2683,11 @@ int
 
 	if (strcasecmp(key, "milterGreylistAutowhite") == 0) {
 		ap->ap_autowhite = humanized_atoi(value);
+		goto out;
+	}
+
+	if (strcasecmp(key, "milterGreylistTarpit") == 0) {
+		ap->ap_tarpit = humanized_atoi(value);
 		goto out;
 	}
 

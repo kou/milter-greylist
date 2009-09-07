@@ -16,6 +16,7 @@ void_email	"<>"
 comment		#.*$
 blank		[ \t]{1,}
 auto		[Aa][Uu][Tt][Oo]
+tarpit		[Tt][Aa][Rr][Pp][Ii][Tt]
 
 %{
 	#include "config.h"
@@ -24,7 +25,7 @@ auto		[Aa][Uu][Tt][Oo]
 	#ifndef HAVE_BROKEN_RCSID
 	#include <sys/cdefs.h>
 	#ifdef __RCSID  
-	__RCSID("$Id: dump_lex.l,v 1.21 2007/07/08 21:02:28 manu Exp $");
+	__RCSID("$Id: dump_lex.l,v 1.22 2009/09/07 12:56:54 manu Exp $");
 	#endif
 	#endif
 	#endif
@@ -44,6 +45,7 @@ auto		[Aa][Uu][Tt][Oo]
 
 %%
 {auto}		{ return AUTO; }
+{tarpit}	{ return TARPIT; }
 {blank}
 {comment}
 {ipaddr}	{ 

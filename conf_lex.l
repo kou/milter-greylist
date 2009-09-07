@@ -55,6 +55,10 @@ none		[Nn][Oo][Nn][Ee]
 delays		[Dd][Ee][Ll][Aa][Yy][Ss]
 nodelays	[Nn][Oo][Dd][Ee][Ll][Aa][Yy][Ss]
 gldelay		[Dd][Ee][Ll][Aa][Yy]
+tarpit		[Tt][Aa][Rr][Pp][Ii][Tt]
+tarpit_scope	[Tt][Aa][Rr][Pp][Ii][Tt]_[Ss][Cc][Oo][Pp][Ee]
+session		[Ss][Ee][Ss][Ss][Ii][Oo][Nn]
+command		[Cc][Oo][Mm][Aa][Nn][Dd]
 lazyaw		[Ll][Aa][Zz][Yy][Aa][Ww]
 all		[Aa][Ll][Ll]
 delay		-?[0-9]+[smhdw]?
@@ -163,7 +167,7 @@ domainexact	[Dd][Oo][Mm][Aa][Ii][Nn][Ee][Xx][Aa][Cc][Tt]
 	#ifndef HAVE_BROKEN_RCSID
 	#include <sys/cdefs.h>
 	#ifdef __RCSID
-	__RCSID("$Id: conf_lex.l,v 1.90 2009/06/08 23:40:06 manu Exp $");
+	__RCSID("$Id: conf_lex.l,v 1.91 2009/09/07 12:56:54 manu Exp $");
 	#endif
 	#endif
 	#endif
@@ -307,6 +311,10 @@ domainexact	[Dd][Oo][Mm][Aa][Ii][Nn][Ee][Xx][Aa][Cc][Tt]
 {delays}	{ return DELAYS; }
 {nodelays}	{ return NODELAYS; }
 {gldelay}	{ return GLXDELAY; }
+{tarpit}	{ return TARPIT; }
+{tarpit_scope}	{ return TARPIT_SCOPE; }
+{session}	{ return SESSION; }
+{command}	{ return COMMAND; }
 {all}		{ return ALL; }
 {dumpfreq}	{ return GLDUMPFREQ; }
 {timeout}	{ return GLTIMEOUT; }

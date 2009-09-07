@@ -1,4 +1,4 @@
-/* $Id: conf.h,v 1.49 2009/01/17 04:32:55 manu Exp $ */
+/* $Id: conf.h,v 1.50 2009/09/07 12:56:54 manu Exp $ */
 
 /*
  * Copyright (c) 2004 Emmanuel Dreyfus
@@ -72,6 +72,8 @@ struct conf_rec {
 	int c_testmode;
 	int c_delay;
 	int c_autowhite_validity;
+	int c_tarpit;
+	tarpit_scope_t c_tarpit_scope;
 	char *c_pidfile;
 	char *c_dumpfile;
 	int c_dumpfile_mode;
@@ -137,6 +139,8 @@ struct conf_rec {
 #define C_MATCHMASK6	0x04000
 #define C_ACLDEBUG	0x08000
 #define C_DOMAINEXACT	0x10000
+#define C_TARPIT	0x20000
+#define C_TARPIT_SCOPE	0x40000
 #define C_NOTFORCED(x) 	((conf.c_forced & (x)) == 0) 
 
 /* c_report */

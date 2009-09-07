@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.220 2009/06/29 10:19:13 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.221 2009/09/07 12:56:54 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.220 2009/06/29 10:19:13 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.221 2009/09/07 12:56:54 manu Exp $");
 #endif
 #endif
 
@@ -124,6 +124,7 @@ static void smtp_reply_init(struct smtp_reply *);
 static void smtp_reply_free(struct smtp_reply *);
 static void add_recipient(struct mlfi_priv *, char *);
 static void set_sr_defaults(struct mlfi_priv *, char *, char *, char *);
+static sfsistat tarpit_reentry(struct mlfi_priv *);
 static sfsistat stat_from_code(char *);
 static void cleanup_pidfile(char *);
 static void cleanup_sock(char *);
@@ -136,7 +137,11 @@ static sfsistat real_header(SMFICTX *, char *, char *);
 static sfsistat real_eoh(SMFICTX *);
 static sfsistat real_body(SMFICTX *, unsigned char *, size_t);
 static sfsistat real_eom(SMFICTX *);
+static sfsistat real_abort(SMFICTX *);
 static sfsistat real_close(SMFICTX *);
+#ifdef HAVE_DATA_CALLBACK
+static sfsistat real_data(SMFICTX *);
+#endif
 
 struct smfiDesc smfilter =
 {
@@ -151,8 +156,12 @@ struct smfiDesc smfilter =
 	mlfi_eoh,	/* end of header */
 	mlfi_body,	/* body block filter */
 	mlfi_eom,	/* end of message */
-	NULL,		/* message aborted */
+	mlfi_abort,	/* message aborted */
 	mlfi_close,	/* connection cleanup */
+#ifdef HAVE_DATA_CALLBACK
+	NULL,		/* any unrecognized or unimplemented command filter */
+	mlfi_data,	/* SMTP DATA command filter */
+#endif
 };
 
 static int nodetach = 0;
@@ -267,6 +276,18 @@ mlfi_eom(ctx)
 }
 
 sfsistat
+mlfi_abort(ctx)
+	SMFICTX *ctx;
+{
+	sfsistat r;
+
+	conf_retain();
+	r = real_abort(ctx);
+	conf_release();
+	return r;
+}
+
+sfsistat
 mlfi_close(ctx)
 	SMFICTX *ctx;
 {
@@ -276,6 +297,43 @@ mlfi_close(ctx)
 	r = real_close(ctx);
 	conf_release();
 	return r;
+}
+
+#ifdef HAVE_DATA_CALLBACK
+sfsistat
+mlfi_data(ctx)
+	SMFICTX *ctx;
+{
+	sfsistat r;
+
+	conf_retain();
+	r = real_data(ctx);
+	conf_release();
+	return r;
+}
+#endif
+
+static sfsistat
+tarpit_reentry(priv)
+	struct mlfi_priv *priv;
+{
+	sfsistat stat = SMFIS_CONTINUE;
+
+	if (!(priv->priv_sr.sr_whitelist & EXF_TARPIT))
+		return stat;
+
+	if (priv->priv_sr.sr_whitelist & EXF_WHITELIST) {
+		struct rcpt *rcpt;
+
+		rcpt = priv->priv_rcpt.lh_first;
+		pending_update(SA(&priv->priv_addr), priv->priv_addrlen,
+			       priv->priv_from, rcpt->r_addr,
+			       priv->priv_sr.sr_autowhite, TU_AUTOWHITE);
+	} else if (priv->priv_sr.sr_whitelist & EXF_GREYLIST) {
+		stat = SMFIS_TEMPFAIL;
+	}
+
+	return stat;
 }
 
 static sfsistat
@@ -353,6 +411,9 @@ real_connect(ctx, hostname, addr)
 	priv->priv_p0f = NULL;
 	p0f_lookup(priv);
 #endif
+	priv->priv_max_tarpitted = 0;
+	priv->priv_total_tarpitted = 0;
+
 	return SMFIS_CONTINUE;
 }
 
@@ -525,7 +586,7 @@ real_envrcpt(ctx, envrcpt)
 	char rcpt[ADDRLEN + 1];
 	int save_nolog;
 	struct tuple_fields tuple;
-
+	time_t sleep_duration = 0;
 	/*
 	 * Strip spaces from the recipient address
 	 */
@@ -536,6 +597,8 @@ real_envrcpt(ctx, envrcpt)
 		mg_log(LOG_ERR, "Internal error: smfi_getpriv() returns NULL");
 		return SMFIS_TEMPFAIL;
 	}
+	if (tarpit_reentry(priv) == SMFIS_TEMPFAIL)
+		return SMFIS_TEMPFAIL;
 
 	if (!iptostring(SA(&priv->priv_addr), priv->priv_addrlen, addrstr,
 	    sizeof(addrstr)))
@@ -603,7 +666,8 @@ real_envrcpt(ctx, envrcpt)
 		return SMFIS_TEMPFAIL;
 	}
 
-	if (priv->priv_sr.sr_whitelist & EXF_WHITELIST) {
+	if (priv->priv_sr.sr_whitelist & EXF_WHITELIST &&
+	    priv->priv_sr.sr_tarpit <= 0) {
 		priv->priv_sr.sr_elapsed = 0;
 		goto exit_accept;
 	}
@@ -663,10 +727,32 @@ real_envrcpt(ctx, envrcpt)
 		goto exit_accept;
 		break;
 	default:			/* first encounter */
-		;
-		break;
-	}
+		if (!(priv->priv_sr.sr_whitelist & EXF_TARPIT))
+			break;
 
+		if (priv->priv_sr.sr_tarpit_scope == TAP_COMMAND &&
+		    priv->priv_sr.sr_tarpit > priv->priv_max_tarpitted)
+			sleep_duration = priv->priv_sr.sr_tarpit;
+		if (priv->priv_sr.sr_tarpit_scope == TAP_SESSION &&
+		    priv->priv_sr.sr_tarpit > priv->priv_total_tarpitted)
+			sleep_duration = priv->priv_sr.sr_tarpit -
+					      priv->priv_total_tarpitted;
+
+		if (sleep_duration > 0) {
+			if (sleep_duration > priv->priv_max_tarpitted)
+				priv->priv_max_tarpitted = sleep_duration;
+			priv->priv_total_tarpitted += sleep_duration;
+			sleep(sleep_duration);
+		} else {
+		    if (priv->priv_sr.sr_whitelist & EXF_WHITELIST)
+			pending_update(SA(&priv->priv_addr), priv->priv_addrlen,
+				       priv->priv_from, rcpt,
+				       priv->priv_sr.sr_autowhite,
+				       TU_AUTOWHITE);
+		}
+		priv->priv_sr.sr_elapsed = 0;
+		goto exit_accept;
+	}
 	priv->priv_sr.sr_remaining = remaining;
 
 	/*
@@ -1133,6 +1219,11 @@ passed:
 				    "Default is to whitelist mail");
 				priv->priv_last_whitelist &= ~EXF_DEFAULT;
 			}
+			if (priv->priv_last_whitelist & EXF_TARPIT) {
+				ADD_REASON(whystr,
+				    "Message whitelisted by tarpit %ts");
+				priv->priv_last_whitelist &= ~EXF_TARPIT;
+			}
 			priv->priv_last_whitelist &= 
 			    ~(EXF_GREYLIST | EXF_WHITELIST | EXF_BLACKLIST);
 
@@ -1190,6 +1281,27 @@ out:
 }
 
 static sfsistat
+real_abort(ctx)
+	SMFICTX *ctx;
+{
+	struct mlfi_priv *priv;
+
+	if ((priv = (struct mlfi_priv *) smfi_getpriv(ctx)) != NULL) {
+		if (priv->priv_sr.sr_whitelist & EXF_TARPIT) {
+			struct rcpt *rcpt;
+
+			rcpt = priv->priv_rcpt.lh_first;
+			pending_update(SA(&priv->priv_addr), priv->priv_addrlen,
+				       priv->priv_from, rcpt->r_addr,
+				       0, TU_TARPIT);
+			priv->priv_sr.sr_whitelist &= ~EXF_TARPIT;
+		}
+	}
+
+	return SMFIS_CONTINUE;
+}
+
+static sfsistat
 real_close(ctx)
 	SMFICTX *ctx;
 {
@@ -1242,7 +1354,21 @@ real_close(ctx)
 	return SMFIS_CONTINUE;
 }
 
+#ifdef HAVE_DATA_CALLBACK
+static sfsistat
+real_data(ctx)
+	SMFICTX *ctx;
+{
+	struct mlfi_priv *priv;
 
+	if ((priv = (struct mlfi_priv *) smfi_getpriv(ctx)) == NULL) {
+		mg_log(LOG_ERR, "Internal error: smfi_getpriv() returns NULL");
+		return SMFIS_TEMPFAIL;
+	}
+
+	return tarpit_reentry(priv);
+}
+#endif
 
 int
 main(argc, argv)
@@ -1279,6 +1405,7 @@ main(argc, argv)
 			    (time_t)humanized_atoi(optarg);
 			defconf.c_forced |= C_AUTOWHITE;
 			break;
+
 		case 'c':
 		        checkonly = 1;
 			break;
@@ -2056,6 +2183,7 @@ smtp_reply_init(sr)
 	/* sr->sr_elapsed = (time_t)0xdeadbeefU; */
 	sr->sr_delay = conf.c_delay;
 	sr->sr_autowhite = conf.c_autowhite_validity;
+	sr->sr_tarpit = conf.c_tarpit;
 
 	return;
 }
@@ -2948,6 +3076,14 @@ fstring_expand(priv, rcpt, fstring)
 			}
 			break;
 		}	
+		case 't': {	/* tarpit time */
+			char buf[32];
+
+			snprintf(buf, sizeof(buf),
+				 "%ld", (long)priv->priv_sr.sr_tarpit);
+			mystrncat(&outstr, buf, &outmaxlen);
+			break;
+		}
 		case '%':	/* Literal '%' */
 			mystrncat(&outstr, "%", &outmaxlen);
 			break;

@@ -1,4 +1,4 @@
-/* $Id: pending.h,v 1.39 2009/04/21 03:28:45 manu Exp $ */
+/* $Id: pending.h,v 1.40 2009/09/07 12:56:54 manu Exp $ */
 /* vim: set sw=8 ts=8 sts=8 noet cino=(0: */
 
 /*
@@ -54,6 +54,10 @@
 #define GLDELAY	1800	/* 1800 seconds = 30 minutes */
 #endif
 
+#ifndef TARPIT_DURATION
+#define TARPIT_DURATION -1 /* do not tarpit */
+#endif
+
 #ifndef TIMEOUT
 #define TIMEOUT (3600 * 24 * 5) /* 432000 seconds = 5 days */
 #endif
@@ -65,10 +69,16 @@
 #include "milter-greylist.h"
 
 typedef enum {
+	T_TARPIT = 3,
 	T_AUTOWHITE = 2,
 	T_PENDING = 1,
 	T_NONE = 0
 } tuple_t;
+
+typedef enum {
+	TU_AUTOWHITE,
+	TU_TARPIT
+} tuple_update_type_t;
 
 TAILQ_HEAD(pendinglist, pending);
 
@@ -78,8 +88,9 @@ struct pending {
 	socklen_t p_salen;
 	char *p_from;
 	char *p_rcpt;
-	struct timeval p_tv;	/* activation time for pending, 
+	struct timeval p_tv;	/* activation time for pending or tarpitting, 
 				   expiration time for autowhite */
+	struct timeval p_tarpit;/* unsuccessful longest duration for tarpit */
 	int p_refcnt;		/* mutex; pending entry is 
 				   shared with sync queue */
         tuple_t	p_type;		/* pending or autowhite entry? */
@@ -94,6 +105,7 @@ struct pending_bucket {
 typedef struct {
 	int pending;
 	int autowhite;
+	int tarpit;
 } tuple_cnt_t;
 
 #define PENDING_LOCK pthread_mutex_lock(&pending_lock);
@@ -105,6 +117,9 @@ struct pending *pending_get(struct sockaddr *, socklen_t, char *, char *,
     time_t, tuple_t);
 tuple_t pending_check(struct sockaddr *, socklen_t, char *, char *, 
     time_t *, time_t *, char *, time_t, time_t);
+time_t pending_tarpitted(struct sockaddr *, socklen_t, char *, char *);
+void pending_update(struct sockaddr *, socklen_t, char *, char *, 
+    time_t, tuple_update_type_t);
 void pending_del(struct sockaddr *, socklen_t, char *, char *, time_t, 
     time_t);
 void pending_rem(struct pending *);

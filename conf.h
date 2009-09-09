@@ -1,4 +1,4 @@
-/* $Id: conf.h,v 1.50 2009/09/07 12:56:54 manu Exp $ */
+/* $Id: conf.h,v 1.51 2009/09/09 12:19:17 manu Exp $ */
 
 /*
  * Copyright (c) 2004 Emmanuel Dreyfus
@@ -155,6 +155,7 @@ extern pthread_key_t conf_key;
 #define conf (*GET_CONF())
 extern char *conffile;
 extern int conf_cold;
+extern int conf_specified;
 
 void conf_init(void);
 void conf_load(void);

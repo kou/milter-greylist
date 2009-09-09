@@ -111,6 +111,7 @@ case "$1" in
 	else
 	  echo "$DESC is running with pid[$PID]"
 	fi
+	;;
   *)
 	N=/etc/init.d/$SNAME
 	echo "Usage: $N {start|stop|restart|reload|force-reload|status}" >&2

@@ -1,4 +1,5 @@
 4.3.4
+	Fix Debian startup script
 	New tarpit feature (Kouhei Sutou)
 	Support make install as unprivilegied user (Kouhei Sutou)
 4.3.3 

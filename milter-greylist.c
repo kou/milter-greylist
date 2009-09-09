@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.221 2009/09/07 12:56:54 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.222 2009/09/09 12:19:17 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.221 2009/09/07 12:56:54 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.222 2009/09/09 12:19:17 manu Exp $");
 #endif
 #endif
 
@@ -1472,6 +1472,7 @@ main(argc, argv)
 				usage(argv[0]);
 			}
 			conffile = optarg;
+			conf_specified = 1;
 			break;
 
 		case 'd':

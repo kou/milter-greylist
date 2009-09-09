@@ -1,4 +1,4 @@
-/* $Id: conf.c,v 1.63 2009/09/07 12:56:54 manu Exp $ */
+/* $Id: conf.c,v 1.64 2009/09/09 12:19:17 manu Exp $ */
 
 /*
  * Copyright (c) 2004 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: conf.c,v 1.63 2009/09/07 12:56:54 manu Exp $");
+__RCSID("$Id: conf.c,v 1.64 2009/09/09 12:19:17 manu Exp $");
 #endif
 #endif
 
@@ -100,6 +100,7 @@ struct conf_rec defconf;
 pthread_key_t conf_key;
 char *conffile = CONFFILE;
 int conf_cold = 1;
+int conf_specified = 0;
 
 #define CONF_LOCK pthread_mutex_lock(&conf_lock);
 #define CONF_UNLOCK pthread_mutex_unlock(&conf_lock);
@@ -107,6 +108,7 @@ static pthread_mutex_t conf_lock = PTHREAD_MUTEX_INITIALIZER;
 static struct conf_list conf_list_head;
 static pthread_cond_t conf_update_cond = PTHREAD_COND_INITIALIZER;
 static int conf_updating;
+static char *legacy_conffile = "/etc/mail/greylist.conf";
 
 void
 conf_init(void) {
@@ -172,6 +174,19 @@ conf_load_internal(timestamp)
 	if (!conf_cold || newconf->c_debug)
 		mg_log(LOG_INFO, "%sloading config file \"%s\"", 
 		    conf_cold ? "" : "re", conffile);
+
+	if (!conf_specified && strcmp(conffile, legacy_conffile) != 0) {
+		struct stat st;
+
+		if (stat(legacy_conffile, &st) == 0) {
+			mg_log(LOG_WARNING,
+			       "legacy configuration file '%s' is used "
+			       "instead of '%s'. IT SHOULD BE RENAMED!",
+			       legacy_conffile,
+			       conffile);
+			conffile = legacy_conffile;
+		}
+	}
 
 	errno = 0;
 	if ((stream = Fopen(conffile, "r")) == NULL) {

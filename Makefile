@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.127 2009/08/14 00:35:33 manu Exp $
+# $Id: Makefile,v 1.128 2009/09/26 14:45:39 manu Exp $
 
 #
 # Copyright (c) 2004 Emmanuel Dreyfus
@@ -29,7 +29,7 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-CFLAGS= 	-g -O2 -Wall -I/usr/pkg/include -D_BSD_SOURCE -I${SRCDIR} -I. 
+CFLAGS= 	-g -O2 -Wall -I/usr/pkg/include -DHAVE_DATA_CALLBACK -DCONFFILE=\"${CONFFILE}\" -DDUMPFILE=\"${DUMPFILE}\" -D_BSD_SOURCE -I${SRCDIR} -I. 
 LDFLAGS=	 -L/usr/pkg/lib -Wl,--rpath=/usr/pkg/lib
 LIBS= 		 -lpthread -lresolv -lmilter
 prefix=		/usr/local
@@ -41,6 +41,8 @@ BINDIR=		${exec_prefix}/bin
 SBINDIR=        ${exec_prefix}/sbin
 MANDIR=		${prefix}/share/man
 USER=		root
+CONFFILE=       ${SYSCONFDIR}/mail/greylist.conf
+DUMPFILE=       ${LOCALSTATEDIR}/milter-greylist/greylist.db
 
 CC=		gcc
 MKDEP=		mkdep
@@ -104,25 +106,25 @@ install-man:
 	${INSTALL} -m 644 ${SRCDIR}/greylist.conf.5 ${DESTDIR}${MANDIR}/man5
 
 install-conf:
-	${INSTALL} -d -m 755 ${DESTDIR}/etc/mail
-	${TEST} -f ${DESTDIR}/etc/mail/greylist.conf -o 	\
+	${INSTALL} -d -m 755 ${DESTDIR}`dirname ${CONFFILE}`
+	${TEST} -f ${DESTDIR}${CONFFILE} -o 	\
 		-f ${DESTDIR}/etc/mail/greylist.except || 	\
-	     ${INSTALL} -m 644 ${SRCDIR}/greylist.conf ${DESTDIR}/etc/mail
+	     ${INSTALL} -m 644 ${SRCDIR}/greylist.conf ${DESTDIR}${CONFFILE}
 	@${TEST} -f ${DESTDIR}/etc/mail/greylist.except && (	 	   \
 		echo "	================================================"; \
 		echo "	 WARNING: the config file name has changed,     "; \
 		echo "	 Please rename /etc/mail/greylist.except, the   "; \
-		echo "	 default name is now in /etc/mail/greylist.conf "; \
+		echo "	 default name is now in ${CONFFILE}             "; \
 		echo "	================================================"; \
 	) || ${TRUE}
 
 install-db:
-	${INSTALL} -d -m 755 -o ${USER} ${DESTDIR}/var/milter-greylist
+	${INSTALL} -d -m 755 -o ${USER} ${DESTDIR}`dirname ${DUMPFILE}`
 	@${TEST} -f ${DESTDIR}/var/db/greylist.db && (			 	   \
 		echo "	================================================"; \
 		echo "	  WARNING: the dump file location has changed,  "; \
 		echo "	  Please move /var/db/greylist.db, the default  "; \
-		echo "	  location is now in /var/milter-greylist/      "; \
+		echo "	  location is now in ${DUMPFILE}                "; \
 		echo "	================================================"; \
 	) || ${TRUE}
 

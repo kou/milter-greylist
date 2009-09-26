@@ -1,4 +1,4 @@
-/* $Id: dump.h,v 1.13 2006/08/30 04:57:58 manu Exp $ */
+/* $Id: dump.h,v 1.14 2009/09/26 14:38:39 manu Exp $ */
 
 /*
  * Copyright (c) 2004 Emmanuel Dreyfus
@@ -70,7 +70,6 @@ extern FILE *dump_in;
 extern int dump_line;
 extern char *dumpfile;
 
-void dump_init(void);
 void *dumper(void *);
 void dumper_start(void);
 void dump_flush(void);

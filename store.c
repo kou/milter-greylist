@@ -5,7 +5,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: store.c,v 1.1 2009/04/19 00:55:32 manu Exp $");
+__RCSID("$Id: store.c,v 1.2 2009/09/26 14:38:39 manu Exp $");
 #endif
 #endif
 
@@ -37,7 +37,6 @@ __RCSID("$Id: store.c,v 1.1 2009/04/19 00:55:32 manu Exp $");
  * Initialize storage backend. No lock needed 
  */
 void mg_init(void) {
-	dump_init();
 	pending_init();
 	dump_reload();		/* Reload a saved greylist */
 

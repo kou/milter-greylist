@@ -1,4 +1,4 @@
-/* $Id: dump.c,v 1.39 2009/09/07 12:56:54 manu Exp $ */
+/* $Id: dump.c,v 1.40 2009/09/26 14:38:39 manu Exp $ */
 
 /*
  * Copyright (c) 2004 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: dump.c,v 1.39 2009/09/07 12:56:54 manu Exp $");
+__RCSID("$Id: dump.c,v 1.40 2009/09/26 14:38:39 manu Exp $");
 #endif
 #endif
 
@@ -83,7 +83,7 @@ __RCSID("$Id: dump.c,v 1.39 2009/09/07 12:56:54 manu Exp $");
 
 static pthread_mutex_t dump_todo_lock = PTHREAD_MUTEX_INITIALIZER;
 static int dump_todo = 0;
-static pthread_cond_t dump_sleepflag;
+static pthread_cond_t dump_sleepflag = PTHREAD_COND_INITIALIZER;
 #define DUMP_TODO_CONF_UPDATE 0x1
 #define DUMP_TODO_FLUSH 0x2
 #define DUMP_TODO_TERMINATE 0x4
@@ -94,19 +94,6 @@ static pthread_mutex_t dump_dirty_lock = PTHREAD_MUTEX_INITIALIZER;
 static int dump_dirty = 0;
 
 static pthread_t dumper_tid;
-
-void
-dump_init(void) {
-	int error;
-
-	if ((error = pthread_cond_init(&dump_sleepflag, NULL)) != 0) {
-		mg_log(LOG_ERR, 
-		    "pthread_cond_init failed: %s", strerror(error));
-		exit(EX_OSERR);
-	}
-
-	return;
-}
 
 void
 dumper_start(void) {

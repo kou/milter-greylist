@@ -167,7 +167,7 @@ domainexact	[Dd][Oo][Mm][Aa][Ii][Nn][Ee][Xx][Aa][Cc][Tt]
 	#ifndef HAVE_BROKEN_RCSID
 	#include <sys/cdefs.h>
 	#ifdef __RCSID
-	__RCSID("$Id: conf_lex.l,v 1.91 2009/09/07 12:56:54 manu Exp $");
+	__RCSID("$Id: conf_lex.l,v 1.92 2009/09/26 14:40:42 manu Exp $");
 	#endif
 	#endif
 	#endif
@@ -190,15 +190,15 @@ domainexact	[Dd][Oo][Mm][Aa][Ii][Nn][Ee][Xx][Aa][Cc][Tt]
 %%
 <*>{blank}
 {comment}
-{eq}		{	yylval.op = OP_EQ; return OP; }
-{ne}		{	yylval.op = OP_NE; return OP; }
-{lt}		{	yylval.op = OP_LT; return OP; }
-{gt}		{	yylval.op = OP_GT; return OP; }
-{le}		{	yylval.op = OP_LE; return OP; }
-{ge}		{	yylval.op = OP_GE; return OP; }
-<INITIAL>{no}	{ return NO; }
-<INITIAL>{not}	{ return NO; }
-<INITIAL>{neg}	{ return NO; }
+{eq}		{ yylval.op = OP_EQ; return OP; }
+{ne}		{ yylval.op = OP_NE; return OP; }
+{lt}		{ yylval.op = OP_LT; return OP; }
+{gt}		{ yylval.op = OP_GT; return OP; }
+{le}		{ yylval.op = OP_LE; return OP; }
+{ge}		{ yylval.op = OP_GE; return OP; }
+{no}		{ return NO; }
+{not}		{ return NO; }
+{neg}		{ return NO; }
 {prop}		{ 
 			BEGIN(S_REGEX);
 			strncpy(yylval.prop, yytext, QSTRLEN);

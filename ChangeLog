@@ -1,4 +1,5 @@
 4.3.4
+	Restore not ACL keyword functionnality (Benoit Branciard)
 	Fix uninitialized thread condition variable (Petar Bogdanovic)
 	Fix Debian startup script
 	New tarpit feature (Kouhei Sutou)

@@ -1,4 +1,4 @@
-/* $Id: pending.c,v 1.89 2009/09/07 12:56:54 manu Exp $ */
+/* $Id: pending.c,v 1.90 2009/10/11 11:26:22 manu Exp $ */
 
 /*
  * Copyright (c) 2004 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: pending.c,v 1.89 2009/09/07 12:56:54 manu Exp $");
+__RCSID("$Id: pending.c,v 1.90 2009/10/11 11:26:22 manu Exp $");
 #endif
 #endif
 
@@ -138,12 +138,13 @@ pending_timeout(pending, now)
 
 /* pending_lock must be locked */
 struct pending *
-pending_get(sa, salen, from, rcpt, date, tupletype)  
+pending_get(sa, salen, from, rcpt, date, tarpit, tupletype)
 	struct sockaddr *sa;
 	socklen_t salen;
 	char *from;
 	char *rcpt;
 	time_t date;
+	time_t tarpit;
 	tuple_t tupletype;
 {
 	struct pending *pending;
@@ -156,7 +157,7 @@ pending_get(sa, salen, from, rcpt, date, tupletype)
 
 	bzero((void *)pending, sizeof(pending));
 	pending->p_tv.tv_sec = date;
-	pending->p_tarpit.tv_sec = 0;
+	pending->p_tarpit.tv_sec = tarpit;
 	pending->p_type = tupletype;
 
 	if ((pending->p_sa = malloc(salen)) == NULL) {
@@ -446,7 +447,7 @@ pending_check(sa, salen, from, rcpt, remaining, elapsed, queueid, delay, aw)
 	*/
 	accepted = now + delay;
 	rest = 0;
-	pending = pending_get(sa, salen, from, rcpt, accepted, T_PENDING);
+	pending = pending_get(sa, salen, from, rcpt, accepted, 0, T_PENDING);
 	if (pending) {
 		++dirty;
 		peer_create(pending);

@@ -1,3 +1,5 @@
+4.3.5
+	Fix tarpit deadlock (Kouhei Sutou)
 4.3.4
 	Restore not ACL keyword functionnality (Benoit Branciard)
 	Fix uninitialized thread condition variable (Petar Bogdanovic)

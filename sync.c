@@ -1,4 +1,4 @@
-/* $Id: sync.c,v 1.86 2009/05/23 22:50:53 manu Exp $ */
+/* $Id: sync.c,v 1.87 2009/10/11 11:26:22 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: sync.c,v 1.86 2009/05/23 22:50:53 manu Exp $");
+__RCSID("$Id: sync.c,v 1.87 2009/10/11 11:26:22 manu Exp $");
 #endif
 #endif
 
@@ -1224,7 +1224,7 @@ eol:
 			PENDING_LOCK;
 			/* delay = -1 means unused: we supply the date */
 			if (pending_get(SA(&addr), addrlen, from, rcpt, 
-					date, T_PENDING))
+					date, 0, T_PENDING))
 				++dirty;
 			PENDING_UNLOCK;
 			dump_touch(dirty);

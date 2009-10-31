@@ -1,4 +1,5 @@
 4.3.5
+	Do not use socket mode for the PID file (Kouhei Sutou)
 	Fix tarpit deadlock (Kouhei Sutou)
 4.3.4
 	Restore not ACL keyword functionnality (Benoit Branciard)

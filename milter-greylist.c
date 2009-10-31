@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.222 2009/09/09 12:19:17 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.223 2009/10/31 21:26:14 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.222 2009/09/09 12:19:17 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.223 2009/10/31 21:26:14 manu Exp $");
 #endif
 #endif
 
@@ -1634,27 +1634,6 @@ main(argc, argv)
 	cleanup_sock(conf.c_socket);
 	cleanup_pidfile(conf.c_pidfile);
 
-	/*
-	 * Set socket permission
-	 */
-	if (conf.c_socket_mode != -1) {
-		switch(conf.c_socket_mode) {
-		case 666:
-			umask(000);
-			break;
-		case 660:
-			umask(007);
-			break;
-		case 600:
-			umask(077);
-			break;
-		default:
-			mg_log(LOG_ERR, "unexpected socket mode %d",
-			    conf.c_socket_mode);
-			exit(EX_SOFTWARE);
-			break;
-		}
-	}
 	(void)smfi_setconn(conf.c_socket);
 
 	/*
@@ -1677,6 +1656,34 @@ main(argc, argv)
 	if (smfi_register(smfilter) == MI_FAILURE) {
 		mg_log(LOG_ERR, "%s: smfi_register failed", argv[0]);
 		exit(EX_UNAVAILABLE);
+	}
+
+	if (smfi_opensocket(1) == MI_FAILURE) {
+		mg_log(LOG_ERR, "%s: failed to open socket: %s",
+		       argv[0], conf.c_socket);
+		exit(EX_UNAVAILABLE);
+	}
+	/*
+	 * Set socket permission
+	 */
+	if (conf.c_socket_mode != -1) {
+		switch(conf.c_socket_mode) {
+		case 0666:
+		case 0660:
+		case 0600:
+			if (chmod(conf.c_socket, conf.c_socket_mode) == -1)
+				mg_log(LOG_ERR,
+				       "failed to change socket mode: %s: %s: O%o",
+				       strerror(errno),
+				       conf.c_socket,
+				       conf.c_socket_mode);
+			break;
+		default:
+			mg_log(LOG_ERR, "unexpected socket mode %d",
+			    conf.c_socket_mode);
+			exit(EX_SOFTWARE);
+			break;
+		}
 	}
 
 	/*

@@ -23,7 +23,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: conf_yacc.y,v 1.103 2009/09/07 12:56:54 manu Exp $");
+__RCSID("$Id: conf_yacc.y,v 1.104 2009/10/31 21:26:14 manu Exp $");
 #endif
 #endif
 
@@ -517,9 +517,13 @@ socket:		SOCKET QSTRING	{ if (C_NOTFORCED(C_SOCKET))
 
 				switch(mode) {
 				case 666:
+					conf.c_socket_mode = 0666;
+					break;
 				case 660:
+					conf.c_socket_mode = 0660;
+					break;
 				case 600:
-					conf.c_socket_mode = mode;
+					conf.c_socket_mode = 0600;
 					break;
 				default:
 					mg_log(LOG_ERR, "socket mode %d is "

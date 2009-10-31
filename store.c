@@ -32,7 +32,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: store.c,v 1.3 2009/10/02 20:03:44 manu Exp $");
+__RCSID("$Id: store.c,v 1.4 2009/10/31 21:28:03 manu Exp $");
 #endif
 #endif
 
@@ -59,6 +59,16 @@ __RCSID("$Id: store.c,v 1.3 2009/10/02 20:03:44 manu Exp $");
 #ifdef USE_DMALLOC
 #include <dmalloc.h> 
 #endif
+
+
+void pending_init(void);
+tuple_t pending_check(struct sockaddr *, socklen_t, char *, char *, 
+    time_t *, time_t *, char *, time_t, time_t);
+time_t pending_tarpitted(struct sockaddr *, socklen_t, char *, char *);
+void pending_update(struct sockaddr *, socklen_t, char *, char *, 
+    time_t, tuple_update_type_t);
+void pending_del_addr(struct sockaddr *, socklen_t, char *, int);
+
 
 /* 
  * Initialize storage backend. No lock needed 
@@ -88,13 +98,48 @@ void mg_start(void)	{
 	return;
 }
 
-
+/* 
+ * Check pending list for tuple, and update to autowhite if found
+ */
 tuple_t mg_tuple_check(tuple)
-	struct tuple_fields tuple;
+	struct tuple_fields *tuple;
 {
-	return pending_check(tuple.sa, tuple.salen,
-	    tuple.from, tuple.rcpt, tuple.remaining, tuple.elapsed,
-	    tuple.queueid, tuple.gldelay, tuple.autowhite);
+	return pending_check(tuple->sa, tuple->salen,
+	    tuple->from, tuple->rcpt, tuple->remaining, tuple->elapsed,
+	    tuple->queueid, tuple->gldelay, tuple->autowhite);
+}
+
+/* 
+ * Check pending list for tarpit entry
+ */
+time_t mg_tarpit_check(tuple)
+	struct tuple_fields *tuple;
+{
+	return pending_tarpitted(tuple->sa, tuple->salen,
+	    tuple->from, tuple->rcpt);
+}
+
+
+/* 
+ * Update pending entry
+ */
+void mg_tuple_update(tuple)
+	struct tuple_fields *tuple;
+{
+	pending_update(tuple->sa, tuple->salen,
+	    tuple->from, tuple->rcpt, tuple->autowhite,
+	    tuple->updatetype);
+}
+
+
+/* 
+ * Remove pending entry
+ */
+void mg_tuple_remove(tuple)
+	struct tuple_fields *tuple;
+{
+	pending_del_addr(tuple->sa, tuple->salen,
+	    tuple->queueid, tuple->acl_line);
 }
 
 /* 

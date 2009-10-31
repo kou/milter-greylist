@@ -15,7 +15,7 @@
 %token LOGFAC_LOCAL0 LOGFAC_LOCAL1 LOGFAC_LOCAL2 LOGFAC_LOCAL3 LOGFAC_LOCAL4
 %token LOGFAC_LOCAL5 LOGFAC_LOCAL6 LOGFAC_LOCAL7 P0F P0FSOCK DKIMCHECK
 %token SPAMDSOCK SPAMDSOCKT SPAMD DOMAINEXACT ADDHEADER NOLOG LDAPBINDDN 
-%token LDAPBINDPW TARPIT TARPIT_SCOPE SESSION COMMAND
+%token LDAPBINDPW TARPIT TARPIT_SCOPE SESSION COMMAND MX
 
 %{
 #include "config.h"
@@ -23,7 +23,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: conf_yacc.y,v 1.104 2009/10/31 21:26:14 manu Exp $");
+__RCSID("$Id: conf_yacc.y,v 1.105 2009/10/31 21:28:03 manu Exp $");
 #endif
 #endif
 
@@ -840,6 +840,7 @@ acl_clause:	helo_clause
 	|	domainregex_clause
 	|	netblock_clause
 	|	dnsrbl_clause
+	|	mx_clause
 	|	macro_clause
 	|	urlcheck_clause
 	|	ldapcheck_clause
@@ -1065,6 +1066,23 @@ dnsrbl_clause:		DNSRBL QSTRING {
 #endif
 			}
 	;
+
+
+
+mx_clause:              MX CIDR {
+#ifdef USE_MX
+
+                        acl_add_clause(AC_MX, &$2);
+#else
+                        acl_drop();
+                        mg_log(LOG_INFO,
+                            "MX support not compiled in, ignore line %d",
+                            conf_line);
+#endif
+                        }
+        ;
+
+
 
 macro_clause:	SM_MACRO QSTRING {
 			char qstring[QSTRLEN + 1];

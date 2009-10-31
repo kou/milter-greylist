@@ -6,7 +6,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: dump_yacc.y,v 1.23 2009/10/11 11:26:22 manu Exp $");
+__RCSID("$Id: dump_yacc.y,v 1.24 2009/10/31 21:28:03 manu Exp $");
 #endif
 #endif
 
@@ -18,6 +18,11 @@ __RCSID("$Id: dump_yacc.y,v 1.23 2009/10/11 11:26:22 manu Exp $");
 #endif
 #include "conf.h"
 #include "pending.h"
+
+struct pending *pending_get(struct sockaddr *, socklen_t, char *, char *,
+    time_t, time_t, tuple_t);
+void pending_update(struct sockaddr *, socklen_t, char *, char *, 
+    time_t, tuple_update_type_t);
 
 int dump_lex(void);
 void dump_error(char *);

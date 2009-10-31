@@ -42,6 +42,9 @@ struct tuple_fields {
 	char	*queueid;	/* for logging purposes */
 	time_t	gldelay;	/* delay time for new greylist entry */
 	time_t	autowhite;	/* time-out for autowhite entry */
+	tuple_update_type_t	/* update to autowhite or tarpit? */
+		updatetype;
+	int	acl_line;	/* acl line number */
 };
 
 /* 
@@ -57,7 +60,22 @@ void mg_start();
 /* 
  * check tuple status, add and update if necessary 
  */
-tuple_t mg_tuple_check(struct tuple_fields);
+tuple_t mg_tuple_check(struct tuple_fields *);
+
+/* 
+ * Remove pending entry
+ */
+void mg_tuple_remove(struct tuple_fields *);
+
+/* 
+ * Check pending list for tarpit entry
+ */
+time_t mg_tarpit_check(struct tuple_fields *);
+
+/* 
+ * update tuple status 
+ */
+void mg_tuple_update(struct tuple_fields *);
 
 /* 
  * in case backend needs cleaning up 

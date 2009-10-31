@@ -1,4 +1,4 @@
-/* $Id: sync.c,v 1.87 2009/10/11 11:26:22 manu Exp $ */
+/* $Id: sync.c,v 1.88 2009/10/31 21:28:03 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: sync.c,v 1.87 2009/10/11 11:26:22 manu Exp $");
+__RCSID("$Id: sync.c,v 1.88 2009/10/31 21:28:03 manu Exp $");
 #endif
 #endif
 
@@ -61,6 +61,14 @@ __RCSID("$Id: sync.c,v 1.87 2009/10/11 11:26:22 manu Exp $");
 #ifdef USE_DMALLOC
 #include <dmalloc.h> 
 #endif
+
+struct pending *pending_get(struct sockaddr *, socklen_t, char *, char *,
+    time_t, time_t, tuple_t);
+void pending_del(struct sockaddr *, socklen_t, char *, char *, time_t, 
+    time_t);
+void pending_del_addr(struct sockaddr *, socklen_t, char *, int);
+struct pending *pending_ref(struct pending *);
+void pending_free(struct pending *);
 
 #define SYNC_PROTO_CURRENT 3
 

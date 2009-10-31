@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.h,v 1.78 2009/09/07 12:56:54 manu Exp $ */
+/* $Id: milter-greylist.h,v 1.79 2009/10/31 21:28:03 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -151,7 +151,7 @@ typedef enum {
 }  tarpit_scope_t;
 
 struct smtp_reply {
-	int sr_whitelist;
+	long long sr_whitelist;
 	int sr_nowhitelist;
 	time_t sr_elapsed;
 	time_t sr_remaining;

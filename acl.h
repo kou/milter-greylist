@@ -1,4 +1,4 @@
-/* $Id: acl.h,v 1.41 2009/09/07 12:56:54 manu Exp $ */
+/* $Id: acl.h,v 1.42 2009/10/31 21:28:03 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -51,7 +51,7 @@
 typedef enum { A_GREYLIST, A_WHITELIST, A_BLACKLIST, } acl_type_t;
 typedef enum { AS_NONE, AS_RCPT, AS_DATA, AS_ANY, } acl_stage_t;
 typedef enum { AT_NONE, AT_STRING, AT_REGEX, AT_NETBLOCK, AT_OPNUM, 
-	       AT_CLOCKSPEC, AT_DNSRBL, AT_URLCHECK, AT_MACRO, 
+	       AT_CLOCKSPEC, AT_DNSRBL, AT_MX, AT_URLCHECK, AT_MACRO, 
 	       AT_LIST, AT_PROP, AT_SPF, AT_DKIM, 
 	       AT_LDAPCHECK, AT_TIME } acl_data_type_t;
 
@@ -83,6 +83,7 @@ typedef enum {
 	AC_HEADER_RE,
 	AC_DNSRBL,
 	AC_DNSRBL_LIST,
+	AC_MX,
 	AC_MACRO,
 	AC_MACRO_RE,
 	AC_MACRO_LIST,
@@ -184,6 +185,9 @@ typedef union acl_data {
 #ifdef USE_DNSRBL
 	struct dnsrbl_entry *dnsrbl;
 #endif
+#ifdef USE_MX
+	int mx_cidr;
+#endif
 #ifdef USE_CURL
 	struct urlcheck_entry *urlcheck;
 #endif
@@ -213,7 +217,7 @@ struct acl_clause_rec {
 	acl_data_type_t acr_data_type;
 	acl_clause_t acr_list_type;
 	acl_clause_t acr_item_type;
-	int acr_exf;
+	long long acr_exf;
 	char *(*acr_print)(acl_data_t *, char *, size_t);
 	void (*acr_add)(acl_data_t *, void *data);
 	void (*acr_free)(acl_data_t *);
@@ -329,38 +333,39 @@ int myregexec(struct mlfi_priv *, acl_data_t *,
 int acl_modify_by_prop(char *, char *, struct acl_param *);
 /* acl_filter() return codes */
 #define	EXF_UNSET	0
-#define	EXF_GREYLIST	(1 << 0)
-#define EXF_WHITELIST	(1 << 1)
+#define	EXF_GREYLIST	(1LL << 0)
+#define EXF_WHITELIST	(1LL << 1)
 
-#define	EXF_DEFAULT	(1 << 2)
-#define	EXF_ADDR	(1 << 3)
-#define	EXF_DOMAIN	(1 << 4)
-#define	EXF_FROM	(1 << 5)
-#define	EXF_RCPT	(1 << 6)
-#define	EXF_AUTO	(1 << 7)
-#define	EXF_NONE	(1 << 8)
-#define	EXF_AUTH	(1 << 9)
-#define	EXF_SPF		(1 << 10)
-#define	EXF_NONIP	(1 << 11)
-#define	EXF_STARTTLS	(1 << 12)
-#define EXF_ACCESSDB	(1 << 13)
-#define EXF_DRAC	(1 << 14)
-#define EXF_DNSRBL	(1 << 15)
-#define EXF_BLACKLIST	(1 << 16)
-#define EXF_MACRO	(1 << 17)
-#define EXF_URLCHECK	(1 << 18)
-#define EXF_HEADER	(1 << 19)
-#define EXF_BODY	(1 << 20)
-#define EXF_MSGSIZE	(1 << 21)
-#define EXF_RCPTCOUNT	(1 << 22)
-#define EXF_CLOCKSPEC	(1 << 23)
-#define EXF_GEOIP	(1 << 24)
-#define EXF_PROP	(1 << 25)
-#define EXF_HELO	(1 << 26)
-#define EXF_LDAPCHECK	(1 << 27)
-#define EXF_NOLOG	(1 << 28)
-#define	EXF_DKIM	(1 << 28)
-#define EXF_P0F		(1 << 29)
-#define EXF_SA		(1 << 30)
-#define EXF_TARPIT	(1 << 31)
+#define	EXF_DEFAULT	(1LL << 2)
+#define	EXF_ADDR	(1LL << 3)
+#define	EXF_DOMAIN	(1LL << 4)
+#define	EXF_FROM	(1LL << 5)
+#define	EXF_RCPT	(1LL << 6)
+#define	EXF_AUTO	(1LL << 7)
+#define	EXF_NONE	(1LL << 8)
+#define	EXF_AUTH	(1LL << 9)
+#define	EXF_SPF		(1LL << 10)
+#define	EXF_NONIP	(1LL << 11)
+#define	EXF_STARTTLS	(1LL << 12)
+#define EXF_ACCESSDB	(1LL << 13)
+#define EXF_DRAC	(1LL << 14)
+#define EXF_DNSRBL	(1LL << 15)
+#define EXF_BLACKLIST	(1LL << 16)
+#define EXF_MACRO	(1LL << 17)
+#define EXF_URLCHECK	(1LL << 18)
+#define EXF_HEADER	(1LL << 19)
+#define EXF_BODY	(1LL << 20)
+#define EXF_MSGSIZE	(1LL << 21)
+#define EXF_RCPTCOUNT	(1LL << 22)
+#define EXF_CLOCKSPEC	(1LL << 23)
+#define EXF_GEOIP	(1LL << 24)
+#define EXF_PROP	(1LL << 25)
+#define EXF_HELO	(1LL << 26)
+#define EXF_LDAPCHECK	(1LL << 27)
+#define EXF_NOLOG	(1LL << 28)
+#define	EXF_DKIM	(1LL << 28)
+#define EXF_P0F		(1LL << 29)
+#define EXF_SA		(1LL << 30)
+#define EXF_TARPIT	(1LL << 31)
+#define EXF_MX		(1LL << 32) /* Need long long (64b) */
 #endif /* _ACL_H_ */

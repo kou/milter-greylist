@@ -1,4 +1,4 @@
-/* $Id: pending.h,v 1.41 2009/10/11 11:26:22 manu Exp $ */
+/* $Id: pending.h,v 1.42 2009/10/31 21:28:03 manu Exp $ */
 /* vim: set sw=8 ts=8 sts=8 noet cino=(0: */
 
 /*
@@ -76,8 +76,8 @@ typedef enum {
 } tuple_t;
 
 typedef enum {
-	TU_AUTOWHITE,
-	TU_TARPIT
+	TU_AUTOWHITE = 2,
+	TU_TARPIT = 1
 } tuple_update_type_t;
 
 TAILQ_HEAD(pendinglist, pending);
@@ -112,26 +112,9 @@ typedef struct {
 #define PENDING_UNLOCK pthread_mutex_unlock(&pending_lock);
 extern pthread_mutex_t pending_lock;
 
-void pending_init(void);
-struct pending *pending_get(struct sockaddr *, socklen_t, char *, char *,
-    time_t, time_t, tuple_t);
-tuple_t pending_check(struct sockaddr *, socklen_t, char *, char *, 
-    time_t *, time_t *, char *, time_t, time_t);
-time_t pending_tarpitted(struct sockaddr *, socklen_t, char *, char *);
-void pending_update(struct sockaddr *, socklen_t, char *, char *, 
-    time_t, tuple_update_type_t);
-void pending_del(struct sockaddr *, socklen_t, char *, char *, time_t, 
-    time_t);
-void pending_rem(struct pending *);
-void pending_put(struct pending *, time_t);
-tuple_cnt_t pending_textdump(FILE *);
-struct pending *pending_ref(struct pending *);
-void pending_free(struct pending *);
 int ip_match(struct sockaddr *, struct sockaddr *, ipaddr *);
 int ip_equal(struct sockaddr *, struct sockaddr *);
 char *iptostring(struct sockaddr *, socklen_t, char *, size_t);
 int ipfromstring(char *, struct sockaddr *, socklen_t *, sa_family_t);
-void pending_del_addr(struct sockaddr *, socklen_t, char *, int);
-
 
 #endif /* _PENDING_H_ */

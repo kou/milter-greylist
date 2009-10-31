@@ -1,4 +1,5 @@
 4.3.5
+	Add mx ACL clause (Rudy Eschauzier)
 	Do not use socket mode for the PID file (Kouhei Sutou)
 	Fix tarpit deadlock (Kouhei Sutou)
 4.3.4

@@ -3,7 +3,7 @@
 %option noyywrap
 %option prefix="conf_"
 
-number		[0-9]+
+number		[0-9]+[kM]?
 ipaddr		[0-9]{1,3}"."[0-9]{1,3}"."[0-9]{1,3}"."[0-9]{1,3}
 ip6addr		([0-9a-fA-F]*:){2,}[0-9a-fA-F]*(%[0-9a-zA-Z]+)?
 cidr		"/"[0-9]{1,3}
@@ -152,6 +152,7 @@ not		[Nn][Oo][Tt]
 neg		"!"
 prop		"$"[-_A-Za-z0-9]+
 domainexact	[Dd][Oo][Mm][Aa][Ii][Nn][Ee][Xx][Aa][Cc][Tt]
+mx		[Mm][Xx]
 
 %s S_REGEX 
 %s S_SPF
@@ -167,7 +168,7 @@ domainexact	[Dd][Oo][Mm][Aa][Ii][Nn][Ee][Xx][Aa][Cc][Tt]
 	#ifndef HAVE_BROKEN_RCSID
 	#include <sys/cdefs.h>
 	#ifdef __RCSID
-	__RCSID("$Id: conf_lex.l,v 1.92 2009/09/26 14:40:42 manu Exp $");
+	__RCSID("$Id: conf_lex.l,v 1.93 2009/10/31 21:28:03 manu Exp $");
 	#endif
 	#endif
 	#endif
@@ -333,6 +334,7 @@ domainexact	[Dd][Oo][Mm][Aa][Ii][Nn][Ee][Xx][Aa][Cc][Tt]
 {blacklist}	{ return BLACKLIST; }
 {default}	{ return DEFAULT; }
 {domainexact}	{ return DOMAINEXACT; }
+{mx}            {       return MX; }
 <INITIAL>{star}		{ return STAR; }
 <S_CLOCKSPEC2>{star}	{ return STAR; }
 <S_CLOCKSPEC2>{slash}	{ return SLASH; }
@@ -403,6 +405,7 @@ domainexact	[Dd][Oo][Mm][Aa][Ii][Nn][Ee][Xx][Aa][Cc][Tt]
 			return yytext[0]; 
 		}
 {nextln}	{	conf_line++; }
+
 <*>.|\n		{ 
 			mg_log(LOG_ERR, "unknown token \"%s\" line %d", 
 			    yytext, conf_line); 

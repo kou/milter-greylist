@@ -1,4 +1,4 @@
-/* $Id: dump.c,v 1.40 2009/09/26 14:38:39 manu Exp $ */
+/* $Id: dump.c,v 1.41 2009/10/31 21:28:03 manu Exp $ */
 
 /*
  * Copyright (c) 2004 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: dump.c,v 1.40 2009/09/26 14:38:39 manu Exp $");
+__RCSID("$Id: dump.c,v 1.41 2009/10/31 21:28:03 manu Exp $");
 #endif
 #endif
 
@@ -72,6 +72,8 @@ __RCSID("$Id: dump.c,v 1.40 2009/09/26 14:38:39 manu Exp $");
 #ifdef USE_DMALLOC
 #include <dmalloc.h> 
 #endif
+
+tuple_cnt_t pending_textdump(FILE *);
 
 /*
  * The dump_dirty indicates number of changes from the last dump, but

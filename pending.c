@@ -1,4 +1,4 @@
-/* $Id: pending.c,v 1.90 2009/10/11 11:26:22 manu Exp $ */
+/* $Id: pending.c,v 1.91 2009/10/31 21:28:03 manu Exp $ */
 
 /*
  * Copyright (c) 2004 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: pending.c,v 1.90 2009/10/11 11:26:22 manu Exp $");
+__RCSID("$Id: pending.c,v 1.91 2009/10/31 21:28:03 manu Exp $");
 #endif
 #endif
 
@@ -72,6 +72,23 @@ __RCSID("$Id: pending.c,v 1.90 2009/10/11 11:26:22 manu Exp $");
 #ifdef USE_DMALLOC
 #include <dmalloc.h> 
 #endif
+
+void pending_init(void);
+tuple_t pending_check(struct sockaddr *, socklen_t, char *, char *, 
+    time_t *, time_t *, char *, time_t, time_t);
+time_t pending_tarpitted(struct sockaddr *, socklen_t, char *, char *);
+void pending_update(struct sockaddr *, socklen_t, char *, char *, 
+    time_t, tuple_update_type_t);
+void pending_rem(struct pending *);
+void pending_put(struct pending *, time_t);
+struct pending *pending_get(struct sockaddr *, socklen_t, char *, char *,
+    time_t, time_t, tuple_t);
+void pending_del(struct sockaddr *, socklen_t, char *, char *, time_t, 
+    time_t);
+void pending_del_addr(struct sockaddr *, socklen_t, char *, int);
+struct pending *pending_ref(struct pending *);
+void pending_free(struct pending *);
+tuple_cnt_t pending_textdump(FILE *);
 
 struct pending_bucket *pending_buckets;
 struct pendinglist pending_head;

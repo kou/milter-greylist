@@ -1,4 +1,4 @@
-# $Id: configure.ac,v 1.250 2009/09/26 14:45:39 manu Exp $
+# $Id: configure.ac,v 1.251 2009/10/31 21:28:03 manu Exp $
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
@@ -748,6 +748,34 @@ AC_ARG_ENABLE(dnsrbl,
 		exit 1;
 	 fi
 	])
+
+# Check for MX
+AC_ARG_ENABLE(mx,
+        [  --enable-mx      Enable MX support],
+        [if test x$rdns = xyes; then
+                SAVEDCFLAGS=$CFLAGS" -DUSE_MX"
+                # For Debian
+                CFLAGS=
+                AC_TRY_LINK([#include <stdio.h>
+                             #include <arpa/nameser.h>
+                        ], [ int result = ns_initparse(NULL, 0, NULL); ],
+                        [],[ AC_CHECK_LIB([resolv], [ns_initparse],
+                            [LIBS="$LIBS -lresolv"], [
+                                if test -r /usr/lib/libresolv.a; then
+                                        LIBS="$LIBS /usr/lib/libresolv.a"
+                                else
+                                        AC_MSG_WARN([ns_initparse not found])
+                                fi
+                            ])
+                ])
+                CFLAGS=$SAVEDCFLAGS
+         else
+                echo "--enable-mx defined, but DNS resolver is not thread safe";
+                echo "Try installing BIND9 and using --with-libbind, or if you";
+                echo "know what you are doing, use --with-thread-safe-resolver";
+                exit 1;
+         fi
+        ])
 
 # We enable some features for Postfix
 AC_ARG_ENABLE(postfix,

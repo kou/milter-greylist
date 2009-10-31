@@ -1,4 +1,4 @@
-/* $Id: acl.c,v 1.94 2009/09/07 12:56:54 manu Exp $ */
+/* $Id: acl.c,v 1.95 2009/10/31 21:28:03 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: acl.c,v 1.94 2009/09/07 12:56:54 manu Exp $");
+__RCSID("$Id: acl.c,v 1.95 2009/10/31 21:28:03 manu Exp $");
 #endif
 #endif
 
@@ -62,11 +62,15 @@ __RCSID("$Id: acl.c,v 1.94 2009/09/07 12:56:54 manu Exp $");
 
 #include "spf.h"
 #include "acl.h"
+#include "store.h"
 #include "conf.h"
 #include "sync.h"
 #include "list.h"
 #ifdef USE_DNSRBL
 #include "dnsrbl.h"
+#endif
+#ifdef USE_MX
+#include "mx.h"
 #endif
 #ifdef USE_CURL
 #include "urlcheck.h"
@@ -133,6 +137,10 @@ char *acl_print_macro(acl_data_t *, char *, size_t);
 #ifdef USE_DNSRBL
 void acl_add_dnsrbl(acl_data_t *, void *);
 char *acl_print_dnsrbl(acl_data_t *, char *, size_t);
+#endif
+#ifdef USE_MX
+void acl_add_mx(acl_data_t *, void *);
+char *acl_print_mx(acl_data_t *, char *, size_t);
 #endif
 #ifdef USE_CURL
 void acl_add_urlcheck(acl_data_t *, void *);
@@ -268,6 +276,12 @@ struct acl_clause_rec acl_clause_rec[] = {
 	  AT_LIST, AC_NONE, AC_NONE, EXF_DNSRBL,
 	  acl_print_list, acl_add_list, 
 	  NULL, acl_list_filter },
+#endif
+#ifdef USE_MX
+	{ AC_MX, UNIQUE, AS_ANY, "mx", 
+	  AT_MX, AC_NONE, AC_STRING, EXF_MX,
+	  acl_print_mx, acl_add_mx,
+	  NULL, mx_check },
 #endif
 #ifdef USE_CURL
 	{ AC_URLCHECK, MULTIPLE_OK, AS_ANY, "urlcheck", 
@@ -563,10 +577,15 @@ acl_tarpit_filter(ad, stage, ap, priv)
 	struct acl_param *ap;
 	struct mlfi_priv *priv;
 {
-	ap->ap_tarpitted = pending_tarpitted(SA(&priv->priv_addr),
-					     priv->priv_addrlen,
-					     priv->priv_from,
-					     priv->priv_cur_rcpt);
+	struct tuple_fields tuple;
+
+	tuple.sa = SA(&priv->priv_addr);
+	tuple.salen = priv->priv_addrlen;
+	tuple.from = priv->priv_from;
+	tuple.rcpt = priv->priv_cur_rcpt;
+
+	ap->ap_tarpitted = mg_tarpit_check(&tuple);
+
 	ap->ap_tarpit = ad->time;
 	return ap->ap_tarpitted == (time_t)-1 || ap->ap_tarpitted > 0;
 }
@@ -1395,6 +1414,27 @@ acl_print_dnsrbl(ad, buf, len)
 }
 #endif
 
+#ifdef USE_MX
+void
+acl_add_mx(ad, data)
+	acl_data_t *ad;
+	void *data;
+{
+	ad->mx_cidr = *(int *)data;
+	return;
+}
+
+char *
+acl_print_mx(ad, buf, len)
+	acl_data_t *ad;
+	char *buf;
+	size_t len;
+{
+	snprintf(buf, len, "/%d", ad->mx_cidr);
+	return buf;
+}
+#endif
+
 #ifdef USE_CURL
 void
 acl_add_urlcheck(ad, data)
@@ -1843,8 +1883,8 @@ acl_filter(stage, ctx, priv)
 	char tmpstr[HDRLEN];
 	char *aclstr;
 	int error = -1;
-	int retval = 0;
-	int noretval = 0;
+	long long retval = 0;
+	long long noretval = 0;
 	char *notstr = " not";
 	char *vstr = "";
 	int found;
@@ -2044,8 +2084,16 @@ acl_filter(stage, ctx, priv)
 		if (ap.ap_flags & A_FREE_ADDHEADER)
 			free(ap.ap_addheader);
 
-		if (ap.ap_flags & A_FLUSHADDR)
-			pending_del_addr(sa, salen, queueid, acl->a_line);
+		if (ap.ap_flags & A_FLUSHADDR) {
+			struct tuple_fields tuple;
+
+			tuple.sa = sa;
+			tuple.salen = salen;
+			tuple.queueid = queueid;
+			tuple.acl_line = acl->a_line;
+
+			mg_tuple_remove(&tuple);
+			}
 
 		if (ap.ap_flags & A_NOLOG)
 			retval |= EXF_NOLOG;
@@ -2090,6 +2138,13 @@ acl_filter(stage, ctx, priv)
 			snprintf(tmpstr, sizeof(tmpstr),
 			    "address %s is%s in DNSRBL", addrstr,
 			    (noretval & EXF_DNSRBL) ? notstr : vstr);
+			ADD_REASON(whystr, tmpstr);
+		}
+		if (retval & EXF_MX) {
+			iptostring(sa, salen, addrstr, sizeof(addrstr));
+			snprintf(tmpstr, sizeof(tmpstr),
+			    "address %s %s MX record", addrstr,
+			    (noretval & EXF_MX) ? "does not match" : "matches");
 			ADD_REASON(whystr, tmpstr);
 		}
 		if (retval & EXF_URLCHECK) {

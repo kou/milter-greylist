@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.223 2009/10/31 21:26:14 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.224 2009/10/31 21:28:03 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.223 2009/10/31 21:26:14 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.224 2009/10/31 21:28:03 manu Exp $");
 #endif
 #endif
 
@@ -317,18 +317,24 @@ static sfsistat
 tarpit_reentry(priv)
 	struct mlfi_priv *priv;
 {
+	struct tuple_fields tuple;
+
 	sfsistat stat = SMFIS_CONTINUE;
 
 	if (!(priv->priv_sr.sr_whitelist & EXF_TARPIT))
 		return stat;
 
 	if (priv->priv_sr.sr_whitelist & EXF_WHITELIST) {
-		struct rcpt *rcpt;
 
-		rcpt = priv->priv_rcpt.lh_first;
-		pending_update(SA(&priv->priv_addr), priv->priv_addrlen,
-			       priv->priv_from, rcpt->r_addr,
-			       priv->priv_sr.sr_autowhite, TU_AUTOWHITE);
+		tuple.sa = SA(&priv->priv_addr);
+		tuple.salen = priv->priv_addrlen;
+		tuple.from = priv->priv_from;
+		tuple.rcpt = priv->priv_rcpt.lh_first->r_addr;
+		tuple.autowhite = 0;
+		tuple.updatetype = TU_AUTOWHITE;
+
+		mg_tuple_update(&tuple);
+
 	} else if (priv->priv_sr.sr_whitelist & EXF_GREYLIST) {
 		stat = SMFIS_TEMPFAIL;
 	}
@@ -715,8 +721,8 @@ real_envrcpt(ctx, envrcpt)
 	tuple.gldelay = priv->priv_sr.sr_delay;
 	tuple.autowhite = priv->priv_sr.sr_autowhite;
 
-	switch(mg_tuple_check(tuple)) {
-	case T_AUTOWHITE:			/* autowhite listed */
+	switch(mg_tuple_check(&tuple)) {
+	case T_AUTOWHITE:		/* autowhite listed */
 		priv->priv_sr.sr_elapsed = 0;
 		priv->priv_sr.sr_whitelist = EXF_WHITELIST | EXF_AUTO;
 		goto exit_accept;
@@ -744,11 +750,10 @@ real_envrcpt(ctx, envrcpt)
 			priv->priv_total_tarpitted += sleep_duration;
 			sleep(sleep_duration);
 		} else {
-		    if (priv->priv_sr.sr_whitelist & EXF_WHITELIST)
-			pending_update(SA(&priv->priv_addr), priv->priv_addrlen,
-				       priv->priv_from, rcpt,
-				       priv->priv_sr.sr_autowhite,
-				       TU_AUTOWHITE);
+		    if (priv->priv_sr.sr_whitelist & EXF_WHITELIST) {
+			tuple.updatetype = TU_AUTOWHITE;
+			mg_tuple_update(&tuple);
+			}
 		}
 		priv->priv_sr.sr_elapsed = 0;
 		goto exit_accept;
@@ -1077,7 +1082,7 @@ real_eom(ctx)
 			tuple.gldelay = priv->priv_sr.sr_delay;
 			tuple.autowhite = priv->priv_sr.sr_autowhite;
 
-			switch(mg_tuple_check(tuple)) {
+			switch(mg_tuple_check(&tuple)) {
 			case T_AUTOWHITE:	/* autowhite listed */
 				priv->priv_sr.sr_whitelist |= 
 				    (EXF_WHITELIST | EXF_AUTO);
@@ -1285,15 +1290,20 @@ real_abort(ctx)
 	SMFICTX *ctx;
 {
 	struct mlfi_priv *priv;
+	struct tuple_fields tuple;
 
 	if ((priv = (struct mlfi_priv *) smfi_getpriv(ctx)) != NULL) {
 		if (priv->priv_sr.sr_whitelist & EXF_TARPIT) {
-			struct rcpt *rcpt;
 
-			rcpt = priv->priv_rcpt.lh_first;
-			pending_update(SA(&priv->priv_addr), priv->priv_addrlen,
-				       priv->priv_from, rcpt->r_addr,
-				       0, TU_TARPIT);
+			tuple.sa = SA(&priv->priv_addr);
+			tuple.salen = priv->priv_addrlen;
+			tuple.from = priv->priv_from;
+			tuple.rcpt = priv->priv_rcpt.lh_first->r_addr;
+			tuple.autowhite = 0;
+			tuple.updatetype = TU_TARPIT;
+
+			mg_tuple_update(&tuple);
+
 			priv->priv_sr.sr_whitelist &= ~EXF_TARPIT;
 		}
 	}

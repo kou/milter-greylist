@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.h,v 1.79 2009/10/31 21:28:03 manu Exp $ */
+/* $Id: milter-greylist.h,v 1.80 2009/11/01 02:03:33 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -210,7 +210,7 @@ struct mlfi_priv {
 	int priv_delayed_reject;
 	struct smtp_reply priv_sr;
 	time_t priv_max_elapsed;
-	int priv_last_whitelist;
+	long long priv_last_whitelist;
 #if defined(USE_CURL) || defined(USE_LDAP)
 	LIST_HEAD(, prop) priv_prop;
 #endif

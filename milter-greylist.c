@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.224 2009/10/31 21:28:03 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.225 2009/11/01 02:03:32 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.224 2009/10/31 21:28:03 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.225 2009/11/01 02:03:32 manu Exp $");
 #endif
 #endif
 
@@ -590,7 +590,7 @@ real_envrcpt(ctx, envrcpt)
 	char *greylist;
 	char addrstr[IPADDRSTRLEN];
 	char rcpt[ADDRLEN + 1];
-	int save_nolog;
+	long long save_nolog;
 	struct tuple_fields tuple;
 	time_t sleep_duration = 0;
 	/*

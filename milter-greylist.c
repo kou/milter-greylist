@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.225 2009/11/01 02:03:32 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.226 2009/11/06 03:52:25 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.225 2009/11/01 02:03:32 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.226 2009/11/06 03:52:25 manu Exp $");
 #endif
 #endif
 
@@ -1214,6 +1214,11 @@ passed:
 				ADD_REASON(whystr, 
 				    "Sender IP whitelisted by DNSRBL");
 				priv->priv_last_whitelist &= ~EXF_DNSRBL;
+			}
+			if (priv->priv_last_whitelist & EXF_MX) {
+				ADD_REASON(whystr, 
+				    "Sender IP whitelisted by MX");
+				priv->priv_last_whitelist &= ~EXF_MX;
 			}
 			if (priv->priv_last_whitelist & EXF_URLCHECK) {
 				ADD_REASON(whystr, "URL check passed");

@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: rc-redhat.sh.in,v 1.7 2006/08/20 05:20:51 manu Exp $
+# $Id: rc-redhat.sh.in,v 1.8 2009/12/13 11:41:48 manu Exp $
 #  init file for milter-greylist
 #
 # chkconfig: - 79 21
@@ -15,6 +15,7 @@
 pidfile="/var/milter-greylist/milter-greylist.pid"
 socket="/var/milter-greylist/milter-greylist.sock"
 user="@USER@"
+hardstopdelay=5
 OPTIONS="-P $pidfile -p $socket"
 if [ -f /etc/sysconfig/milter-greylist ]
 then
@@ -44,7 +45,7 @@ stop() {
                 RETVAL=1
                 failure
         else
-                killproc @BINDIR@/milter-greylist
+                killproc -d $hardstopdelay @BINDIR@/milter-greylist
                 RETVAL=$?
                 [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/milter-greylist
 		[ $RETVAL -eq 0 ] && success || failure

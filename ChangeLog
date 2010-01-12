@@ -1,4 +1,5 @@
 4.3.5
+	Start as root and drop priv later on RedHat (Ole Hansen)
 	Fix dumpfile argument on command line (Ole Hansen)
 	Fix missing reason for whitelisting (Attila Bruncsak)
 	Wait 5 seconds before stopping, for database dump (Attila Bruncsak)

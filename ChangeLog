@@ -1,4 +1,6 @@
 4.3.5
+	Fix dumpfile argument on command line (Ole Hansen)
+	Fix missing reason for whitelisting (Attila Bruncsak)
 	Wait 5 seconds before stopping, for database dump (Attila Bruncsak)
 	Add mx ACL clause (Rudy Eschauzier)
 	Do not use socket mode for the PID file (Kouhei Sutou)

@@ -1,4 +1,4 @@
-/* $Id: acl.c,v 1.95 2009/10/31 21:28:03 manu Exp $ */
+/* $Id: acl.c,v 1.96 2010/01/12 11:18:39 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: acl.c,v 1.95 2009/10/31 21:28:03 manu Exp $");
+__RCSID("$Id: acl.c,v 1.96 2010/01/12 11:18:39 manu Exp $");
 #endif
 #endif
 
@@ -2164,9 +2164,14 @@ acl_filter(stage, ctx, priv)
 			     "sender %s is whitelisted", from);
 			ADD_REASON(whystr, tmpstr);
 		}
-		if ((retval & EXF_RCPT) && (cur_rcpt != NULL)) {
-			snprintf(tmpstr, sizeof(tmpstr),
-			     "recipient %s is whitelisted", cur_rcpt);
+		if (retval & EXF_RCPT) {
+			if (cur_rcpt != NULL) {
+				snprintf(tmpstr, sizeof(tmpstr),
+				     "recipient %s is whitelisted", cur_rcpt);
+			} else {
+				snprintf(tmpstr, sizeof(tmpstr),
+				     "at least one recipient is whitelisted");
+			}
 			ADD_REASON(whystr, tmpstr);
 		}
 		if (retval & EXF_MACRO) {

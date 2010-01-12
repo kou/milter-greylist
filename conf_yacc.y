@@ -23,7 +23,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: conf_yacc.y,v 1.105 2009/10/31 21:28:03 manu Exp $");
+__RCSID("$Id: conf_yacc.y,v 1.106 2010/01/12 11:18:39 manu Exp $");
 #endif
 #endif
 
@@ -480,7 +480,7 @@ dumpfile:	GLDUMPFILE QSTRING{ if (C_NOTFORCED(C_DUMPFILE))
 					    $2, QSTRLEN);
 				}
 	|	GLDUMPFILE QSTRING TNUMBER 	{
-				if (C_NOTFORCED(C_SOCKET))
+				if (C_NOTFORCED(C_DUMPFILE))
 					conf.c_dumpfile = 
 					    quotepath(conf.c_dumpfile_storage, 
 					    $2, QSTRLEN);

@@ -1,4 +1,4 @@
-/* $Id: geoip.h,v 1.2 2008/08/01 03:59:12 manu Exp $ */
+/* $Id: geoip.h,v 1.3 2010/02/15 16:38:03 manu Exp $ */
 
 /*
  * Copyright (c) 2007 Emmanuel Dreyfus
@@ -35,6 +35,7 @@
 #ifndef _MG_GEOIP_H_
 #define _MG_GEOIP_H_
 
+void geoip_init(void);
 void geoip_set_db(char *);
 void geoip_set_ccode(struct mlfi_priv *);
 int geoip_filter(acl_data_t *, acl_stage_t, 

@@ -1,4 +1,4 @@
-/* $Id: geoip.c,v 1.3 2007/07/08 21:02:28 manu Exp $ */
+/* $Id: geoip.c,v 1.4 2010/02/15 16:38:03 manu Exp $ */
 
 /*
  * Copyright (c) 2007 Emmanuel Dreyfus
@@ -45,6 +45,7 @@ __RCSID("$Id");
 #include <string.h>
 #include <syslog.h>
 #include <errno.h>
+#include <sysexits.h>
 #include <sys/param.h>
 
 #include <GeoIP.h>
@@ -59,6 +60,21 @@ __RCSID("$Id");
 
 static GeoIP *geoip_handle = NULL;
 static char geoip_database[MAXPATHLEN + 1];
+static pthread_rwlock_t geoip_lock;
+
+void
+geoip_init(void)
+{
+	int error;
+
+	if ((error = pthread_rwlock_init(&geoip_lock, NULL)) != 0) {
+		mg_log(LOG_ERR, "pthread_rwlock_init failed: %s", 
+		    strerror(error));
+		exit(EX_OSERR);
+	}
+
+	return;
+}
 
 void
 geoip_set_db(name)
@@ -104,7 +120,6 @@ geoip_set_ccode(priv)
 	struct mlfi_priv *priv;
 {
 	char ipstr[IPADDRSTRLEN];
-	int cid;
 
 	if (geoip_handle == NULL) {
 		mg_log(LOG_WARNING, "GeoIP is not available");
@@ -119,9 +134,13 @@ geoip_set_ccode(priv)
 		return;
 	}
 
-	cid = GeoIP_id_by_name(geoip_handle, ipstr);
+	WRLOCK(geoip_lock);
+	priv->priv_ccode = GeoIP_country_code_by_addr(geoip_handle, ipstr);
+	UNLOCK(geoip_lock);
 
-	priv->priv_ccode = GeoIP_country_code[cid];	
+	if (priv->priv_ccode == NULL)
+		mg_log(LOG_DEBUG, "GeoIP failed to lookup ip '%s'", ipstr);
+
 
 	return;
 }

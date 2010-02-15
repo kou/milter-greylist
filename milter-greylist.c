@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.226 2009/11/06 03:52:25 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.227 2010/02/15 16:38:03 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.226 2009/11/06 03:52:25 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.227 2010/02/15 16:38:03 manu Exp $");
 #endif
 #endif
 
@@ -1617,6 +1617,9 @@ main(argc, argv)
 #endif
 #ifdef USE_DKIM
 	dkimcheck_init();
+#endif
+#ifdef USE_GEOIP
+	geoip_init();
 #endif
 	macro_init();
 

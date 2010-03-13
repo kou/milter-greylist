@@ -1,4 +1,5 @@
 4.3.5
+	Really support dkim self and dkim none clauses
 	Better configure test to avoid resolver memory leaks (Hajimu UMEMOTO)
 	Fix p0f related crashes caused by thread unsafety (Enrico Scholz)
 	Fix GeoIP related crashes caused by thread unsafety (Enrico Scholz)

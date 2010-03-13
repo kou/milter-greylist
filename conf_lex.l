@@ -168,7 +168,7 @@ mx		[Mm][Xx]
 	#ifndef HAVE_BROKEN_RCSID
 	#include <sys/cdefs.h>
 	#ifdef __RCSID
-	__RCSID("$Id: conf_lex.l,v 1.93 2009/10/31 21:28:03 manu Exp $");
+	__RCSID("$Id: conf_lex.l,v 1.94 2010/03/13 07:02:49 manu Exp $");
 	#endif
 	#endif
 	#endif
@@ -240,6 +240,10 @@ mx		[Mm][Xx]
 <S_SPF>{self}	{ BEGIN(0); 
 		  yylval.spf_status = MGSPF_SELF; return SPF_STATUS; }
 <S_SPF>{none}	{ BEGIN(0); 
+		  yylval.spf_status = MGSPF_NONE; return SPF_STATUS; }
+<S_DKIM>{self}	{ BEGIN(0); 
+		  yylval.spf_status = MGSPF_SELF; return SPF_STATUS; }
+<S_DKIM>{none}	{ BEGIN(0); 
 		  yylval.spf_status = MGSPF_NONE; return SPF_STATUS; }
 {quiet}		{ return QUIET; }
 {testmode}	{ return TESTMODE; }

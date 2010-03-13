@@ -1,4 +1,4 @@
-/* $Id: p0f.c,v 1.8 2009/02/21 22:54:32 manu Exp $ */
+/* $Id: p0f.c,v 1.9 2010/03/13 06:57:47 manu Exp $ */
 
 /*
  * Copyright (c) 2008 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: p0f.c,v 1.8 2009/02/21 22:54:32 manu Exp $");
+__RCSID("$Id: p0f.c,v 1.9 2010/03/13 06:57:47 manu Exp $");
 #endif
 #endif
 #include <sys/types.h>
@@ -98,27 +98,7 @@ struct p0f_response {
 /* End of stuff borrowed from p0f/p0f-query.h */
 #endif /* P0F_QUERY_FROM_P0F_DIST */
 
-static int p0f_reconnect(void);
-
-static int p0fsock = -1;
-
-void
-p0f_init(void)
-{
-	return;
-}
-
-void
-p0f_clear(void)
-{
-	if (p0fsock != -1) {
-		(void)shutdown(p0fsock, SHUT_RDWR);
-		(void)close(p0fsock);
-		p0fsock = -1;
-	}
-	p0f_init();
-	return;
-}
+static int p0f_connect(void);
 
 int
 p0f_cmp(ad, stage, ap, priv)
@@ -166,6 +146,7 @@ p0f_lookup(priv)
 	char sastr[IPADDRSTRLEN + 1];
 	char dastr[IPADDRSTRLEN + 1];
 	char dpstr[IPADDRSTRLEN + 1];
+	int p0fsock;
 
 	/*
 	 * The p0f query interface semms to only support IPv4
@@ -192,9 +173,6 @@ p0f_lookup(priv)
 		dport = dpstr;
 	}
 
-	if (p0f_reconnect() != 0)
-		return -1;
-
 	memset(&req, 0, sizeof(req));
 	memset(&rep, 0, sizeof(rep));
 	(void)gettimeofday(&tv, NULL);
@@ -214,19 +192,23 @@ p0f_lookup(priv)
 			inet_ntop(AF_INET, &req.dst_ad, dastr, IPADDRSTRLEN),
 			req.dst_port);
 
+	p0fsock = p0f_connect();
+	if (p0fsock < 0)
+		return -1;
+
 	if (write(p0fsock, &req ,sizeof(req)) != sizeof(req)) {
 		mg_log(LOG_ERR, "writing to \"%s\" failed", conf.c_p0fsock);
-		p0f_clear();
+		close(p0fsock);
 		return -1;
 	}
 
 	if (read(p0fsock, &rep, sizeof(rep)) != sizeof(rep)) {
 		mg_log(LOG_ERR, "reading from \"%s\" failed", conf.c_p0fsock);
-		p0f_clear();
+		close(p0fsock);
 		return -1;
 	}
 
-	p0f_clear();
+	close(p0fsock);
 
 	if (rep.id != req.id) {
 		mg_log(LOG_ERR, "p0f reply id mismatch %x expected %x",
@@ -277,12 +259,10 @@ p0f_sock_set(sock)
 }
 
 static int
-p0f_reconnect(void)
+p0f_connect(void)
 {
 	struct sockaddr_un sun;
-
-	if (p0fsock != -1)
-		return 0;
+	int p0fsock;
 
 	if (!conf.c_p0fsock[0])
 		return -1;
@@ -307,11 +287,10 @@ p0f_reconnect(void)
 		mg_log(LOG_ERR, "Cannot connect to p0f socket \"%s\"",
 		      conf.c_p0fsock);	
 		close(p0fsock);
-		p0fsock = -1;
 		return -1;
 	}
 
-	return 0;	
+	return p0fsock;
 }
 
 #endif /* USE_P0F */

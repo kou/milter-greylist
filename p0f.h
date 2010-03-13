@@ -1,4 +1,4 @@
-/* $Id: p0f.h,v 1.1 2008/09/07 00:13:34 manu Exp $ */
+/* $Id: p0f.h,v 1.2 2010/03/13 06:57:47 manu Exp $ */
 
 /*
  * Copyright (c) 2008 Emmanuel Dreyfus
@@ -34,8 +34,6 @@
 
 #include "config.h"
 
-void p0f_init(void);
-void p0f_clear(void);
 int p0f_cmp(acl_data_t *, acl_stage_t,
 	    struct acl_param *, struct mlfi_priv *);
 int p0f_regexec(acl_data_t *, acl_stage_t,

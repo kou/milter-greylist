@@ -1,4 +1,4 @@
-/* $Id: conf.c,v 1.64 2009/09/09 12:19:17 manu Exp $ */
+/* $Id: conf.c,v 1.65 2010/03/13 06:57:47 manu Exp $ */
 
 /*
  * Copyright (c) 2004 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: conf.c,v 1.64 2009/09/09 12:19:17 manu Exp $");
+__RCSID("$Id: conf.c,v 1.65 2010/03/13 06:57:47 manu Exp $");
 #endif
 #endif
 
@@ -212,9 +212,6 @@ conf_load_internal(timestamp)
 #endif
 #ifdef USE_DKIM
 		dkimcheck_clear();
-#endif
-#ifdef USE_P0F
-		p0f_clear();
 #endif
 		all_list_clear();
 		macro_clear();

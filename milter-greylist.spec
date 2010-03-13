@@ -1,4 +1,4 @@
-# $Id: milter-greylist.spec,v 1.111 2009/09/26 14:45:39 manu Exp $
+# $Id: milter-greylist.spec,v 1.112 2010/03/13 07:04:10 manu Exp $
 # Contributed by Ivan F. Martinez
 
 %define ver 4.3.4
@@ -18,6 +18,15 @@
 
 %define libspf2 0
 %{?build_libspf2:%define libspf2 1}
+
+%define libGeoIP 0
+%{?build_libGeoIP:%define libGeoIP 1}
+
+%define libcurl 0
+%{?build_libcurl:%define libcurl 1}
+
+%define p0f 0
+%{?build_p0f:%define p0f 1}
 
 %if ! %{postfix}
 Summary: GreyList milter for Sendmail
@@ -47,6 +56,12 @@ BuildRequires: bind-libbind-devel
 %endif
 %if %{libspf2}
 BuildRequires: libspf2-devel
+%endif
+%if %{libcurl}
+BuildRequires: curl-devel
+%endif
+%if %{libGeoIP}
+BuildRequires: GeoIP-devel
 %endif
 
 %description
@@ -78,11 +93,20 @@ before the second attempt.
 %if %{dnsrbl}
 	--enable-dnsrbl \
 %endif
+%if %{p0f}
+	--enable-p0f \
+%endif
 %if %{libbind}
-	--with-libbind
+	--with-libbind \
 %endif
 %if %{libspf2}
-	--with-libspf2
+	--with-libspf2 \
+%endif
+%if %{libcurl}
+	--with-libcurl \
+%endif
+%if %{libGeoIP}
+	--with-libGeoIP \
 %endif
 
 %{__make} %{?_smp_mflags}
@@ -166,6 +190,9 @@ fi
 %attr(0600,%{user},root) %ghost %{_localstatedir}/milter-greylist/greylist.db
 
 %changelog
+* Wed Mar 10 2010 Chris Bennett (cgb) <chris@ceegeebee.com>
+- added build_GeoIP, build_libcurl, build_p0f
+
 * Tue Aug 26 2008 Joe Pruett <joey@spiretech.com>
 - added build_spf2
 

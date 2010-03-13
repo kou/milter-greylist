@@ -1,4 +1,4 @@
-/* $Id: dnsrbl.c,v 1.28 2007/10/23 10:57:53 manu Exp $ */
+/* $Id: dnsrbl.c,v 1.29 2010/03/13 07:00:12 manu Exp $ */
 
 /*
  * Copyright (c) 2006 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: dnsrbl.c,v 1.28 2007/10/23 10:57:53 manu Exp $");
+__RCSID("$Id: dnsrbl.c,v 1.29 2010/03/13 07:00:12 manu Exp $");
 #endif
 #endif
 
@@ -65,9 +65,8 @@ __RCSID("$Id: dnsrbl.c,v 1.28 2007/10/23 10:57:53 manu Exp $");
 #define NS_MAXMSG	65535
 #endif
 
-#if (defined(res_ninit) || (__RES >= 19991006) )
-#define HAVE_RESN	1
-#ifndef res_ndestroy
+#ifdef HAVE_RES_NINIT
+#ifndef HAVE_RES_NDESTROY
 #define res_ndestroy(res)	res_nclose(res)
 #endif
 #else
@@ -111,7 +110,7 @@ dnsrbl_check_source(ad, stage, ap, priv)
 	struct sockaddr *sa;
 	socklen_t salen;
         struct dnsrbl_entry *source;
-#ifdef HAVE_RESN
+#ifdef HAVE_RES_NINIT
 	struct __res_state res;
 #endif
 	sockaddr_t ss;
@@ -165,7 +164,7 @@ dnsrbl_check_source(ad, stage, ap, priv)
 		break;
 	}
 
-#ifdef HAVE_RESN
+#ifdef HAVE_RES_NINIT
 	bzero(&res, sizeof(res));
 #endif
 	if (res_ninit(&res) != 0) {

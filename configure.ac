@@ -1,4 +1,4 @@
-# $Id: configure.ac,v 1.251 2009/10/31 21:28:03 manu Exp $
+# $Id: configure.ac,v 1.252 2010/03/13 07:00:12 manu Exp $
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
@@ -296,6 +296,36 @@ AC_CHECK_LIB([resolv], [inet_aton], [LIBS="$LIBS -lresolv"], [])
 
 # Check for inet_pton (libmilter uses it). On solaris, -lnsl is required
 AC_CHECK_LIB([nsl], [inet_pton], [LIBS="$LIBS -lnsl"], []) 
+
+# Check if we have res_ninit()
+AC_MSG_CHECKING([for res_ninit])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([
+		#include <sys/types.h>
+		#include <netinet/in.h>
+		#include <arpa/nameser.h>
+		#include <resolv.h>
+	],[
+		struct __res_state res;
+		res_ninit(&res);
+	])], [AC_DEFINE([HAVE_RES_NINIT], [1],
+	    [we have res_ninit]) res_ninit=yes],
+	    [res_ninit=no])
+AC_MSG_RESULT([$res_ninit])
+
+# Check if we have res_ndestroy()
+AC_MSG_CHECKING([for res_ndestroy])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([
+		#include <sys/types.h>
+		#include <netinet/in.h>
+		#include <arpa/nameser.h>
+		#include <resolv.h>
+	],[
+		struct __res_state res;
+		res_ndestroy(&res);
+	])], [AC_DEFINE([HAVE_RES_NDESTROY], [1],
+	    [we have res_ndestroy]) res_ndestroy=yes],
+	    [res_ndestroy=no])
+AC_MSG_RESULT([$res_ndestroy])
 
 # Check for getaddrinfo and getnameinfo
 AC_DEFUN([IPv6_CHECK_FUNC], [

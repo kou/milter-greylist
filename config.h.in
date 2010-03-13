@@ -66,6 +66,12 @@
 /* old <sys/queue.h> */
 #undef HAVE_OLD_QUEUE_H
 
+/* we have res_ndestroy */
+#undef HAVE_RES_NDESTROY
+
+/* we have res_ninit */
+#undef HAVE_RES_NINIT
+
 /* sa_len field in struct sockaddr */
 #undef HAVE_SA_LEN
 

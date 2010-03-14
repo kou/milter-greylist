@@ -2,7 +2,7 @@
 	Update .spec file for libcurl, GeoIP and p0f support (Chris Bennett)
 	Really support dkim self and dkim none clauses
 	Better configure test to avoid resolver memory leaks (Hajimu UMEMOTO)
-	Fix p0f related crashes caused by thread unsafety (Enrico Scholz)
+	Fix p0f wrong results caused by thread unsafety (Enrico Scholz)
 	Fix GeoIP related crashes caused by thread unsafety (Enrico Scholz)
 	Start as root and drop priv later on RedHat (Ole Hansen)
 	Fix dumpfile argument on command line (Ole Hansen)

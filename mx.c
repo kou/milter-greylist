@@ -34,9 +34,8 @@
 #define NS_MAXMSG	65535
 #endif
 
-#if (defined(res_ninit) || (__RES >= 19991006) )
-#define HAVE_RESN	1
-#ifndef res_ndestroy
+#ifdef HAVE_RES_NINIT
+#ifndef HAVE_RES_NDESTROY
 #define res_ndestroy(res)	res_nclose(res)
 #endif
 #else
@@ -72,7 +71,7 @@ mx_check(ad, stage, ap, priv)
 
 	struct sockaddr *sa;
 	socklen_t salen;
-#ifdef HAVE_RESN
+#ifdef HAVE_RES_NINIT
 	struct __res_state res;
 #endif
 	char req[NS_MAXDNAME + 1];
@@ -128,7 +127,7 @@ mx_check(ad, stage, ap, priv)
 	}
 
 
-#ifdef HAVE_RESN
+#ifdef HAVE_RES_NINIT
 	bzero(&res, sizeof(res));
 #endif
 	if (res_ninit(&res) != 0) {

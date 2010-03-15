@@ -1,3 +1,5 @@
+4.3.6
+	Fix MX clause wrong results caused by thread unsafety (Hajimu UMEMOTO)
 4.3.5
 	Update .spec file for libcurl, GeoIP and p0f support (Chris Bennett)
 	Really support dkim self and dkim none clauses

@@ -1,4 +1,4 @@
-/* $Id: p0f.c,v 1.9 2010/03/13 06:57:47 manu Exp $ */
+/* $Id: p0f.c,v 1.10 2010/03/18 15:51:29 manu Exp $ */
 
 /*
  * Copyright (c) 2008 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: p0f.c,v 1.9 2010/03/13 06:57:47 manu Exp $");
+__RCSID("$Id: p0f.c,v 1.10 2010/03/18 15:51:29 manu Exp $");
 #endif
 #endif
 #include <sys/types.h>
@@ -229,7 +229,8 @@ p0f_lookup(priv)
 		break;
 	case RESP_NOMATCH:
 		mg_log(LOG_INFO, "p0f cache miss");
-		return -1; /* XXX This causes a tempfail */
+		priv->priv_p0f = strdup("unknown");
+		return 0;
 		break;
 	default:
 		break;

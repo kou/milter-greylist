@@ -1,4 +1,4 @@
-/* $Id: p0f.c,v 1.10 2010/03/18 15:51:29 manu Exp $ */
+/* $Id: p0f.c,v 1.11 2010/04/06 17:01:59 manu Exp $ */
 
 /*
  * Copyright (c) 2008 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: p0f.c,v 1.10 2010/03/18 15:51:29 manu Exp $");
+__RCSID("$Id: p0f.c,v 1.11 2010/04/06 17:01:59 manu Exp $");
 #endif
 #endif
 #include <sys/types.h>
@@ -183,7 +183,7 @@ p0f_lookup(priv)
 	req.src_ad = SADDR4(&priv->priv_addr)->s_addr;
 	req.src_port = htons(SA4(&priv->priv_addr)->sin_port);
 	req.dst_ad = inet_addr(daddr);
-	req.dst_port = atoi(dport);
+	req.dst_port = htons(atoi(dport));
 
 	if (conf.c_debug)
 		 mg_log(LOG_DEBUG, "p0f_lookup: %s[%d] -> %s[%d]",

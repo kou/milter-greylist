@@ -107,6 +107,7 @@ geoipdb		[Gg][Ee][Oo][Ii][Pp][Dd][Bb]
 geoip		[Gg][Ee][Oo][Ii][Pp]
 ldapconf	[Ll][Dd][Aa][Pp][Cc][Oo][Nn][Ff]
 ldapcheck	[Ll][Dd][Aa][Pp][Cc][Hh][Ee][Cc][Kk]
+domatch		[Dd][Oo][Mm][Aa][Tt][Cc][Hh]
 logfac		[Ll][Oo][Gg][Ff][Aa][Cc]
 log_kern	[Kk][Ee][Rr][Nn]
 log_user	[Uu][Ss][Ee][Rr]
@@ -168,7 +169,7 @@ mx		[Mm][Xx]
 	#ifndef HAVE_BROKEN_RCSID
 	#include <sys/cdefs.h>
 	#ifdef __RCSID
-	__RCSID("$Id: conf_lex.l,v 1.94 2010/03/13 07:02:49 manu Exp $");
+	__RCSID("$Id: conf_lex.l,v 1.95 2010/04/10 05:42:52 manu Exp $");
 	#endif
 	#endif
 	#endif
@@ -272,6 +273,7 @@ mx		[Mm][Xx]
 {geoip}		{ return GEOIP; }
 {ldapconf}	{ return LDAPCONF; }
 {ldapcheck}	{ return LDAPCHECK; }
+{domatch}	{ return DOMATCH; }
 {p0fsock}	{ return P0FSOCK; }
 {p0f}		{ BEGIN(S_REGEX); return P0F; }
 {spamdsock}	{ return SPAMDSOCK; }

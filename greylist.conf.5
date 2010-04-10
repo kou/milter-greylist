@@ -1,5 +1,5 @@
 .\"
-.\" $Id: greylist.conf.5,v 1.98 2009/04/04 03:19:39 manu Exp $
+.\" $Id: greylist.conf.5,v 1.99 2010/04/10 05:42:52 manu Exp $
 .\"
 .\" Copyright (c) 2004-2009 Emmanuel Dreyfus
 .\" All rights reserved.
@@ -774,7 +774,7 @@ If the
 .I clear
 keyword is added, then properties will be cleaned up before handling a new
 recipient. This avoids properties for several recipients to mix.
-Finally, the
+The
 .I fork
 keyword instructs 
 .B milter-greylist(8)
@@ -783,6 +783,12 @@ you encounter thread-safety problems.
 .I fork
 is not compatible with
 .I postmsg\fR.
+The ldapcheck clause never match. It just fetches properties, causing a
+temporary failure if the LDAP directory is unreachable. In order to 
+actually match when an object if returned by the LDAP directory, append
+the
+.I domatch
+keyword.
 .PP
 Here is an example that will use various DNSRBL depending on a per-recipient
 setting stored in the 

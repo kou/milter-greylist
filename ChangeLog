@@ -1,4 +1,5 @@
 4.3.6
+	Add a domatch keyword to ldapconf to enable ldapcheck matches
 	Network byte order byg fix in p0f code (Adrian Dabrowski)
 	Fix MX clause wrong results caused by thread unsafety (Hajimu UMEMOTO)
 	Do not reject message if p0f cannot identiy the remote system

@@ -1,4 +1,4 @@
-/* $Id: ldapcheck.c,v 1.8 2009/06/08 23:40:06 manu Exp $ */
+/* $Id: ldapcheck.c,v 1.9 2010/04/10 05:42:52 manu Exp $ */
 
 /*
  * Copyright (c) 2008 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: ldapcheck.c,v 1.8 2009/06/08 23:40:06 manu Exp $");
+__RCSID("$Id: ldapcheck.c,v 1.9 2010/04/10 05:42:52 manu Exp $");
 #endif
 #endif
 #include <ctype.h>
@@ -360,6 +360,7 @@ ldapcheck_validate(ad, stage, ap, priv)
 	int error,pushed = 0 ;
 	int retval = -1;
 	int clearprop;
+	int nmatch = 0;
 
 	rcpt = priv->priv_cur_rcpt;
 	lce = ad->ldapcheck;
@@ -441,6 +442,8 @@ ldapcheck_validate(ad, stage, ap, priv)
 		BerElement *ber = NULL;
 		char *attr = NULL;
 
+		nmatch++;
+
 		for (attr = ldap_first_attribute(lc->lc_ld, res, &ber);
 		     attr != NULL;
 		     attr = ldap_next_attribute(lc->lc_ld, res, ber)) {
@@ -473,7 +476,11 @@ ldapcheck_validate(ad, stage, ap, priv)
 			ber_free(ber, 0);
 	}
 
-	retval = pushed ? 1 : 0 ;
+       if ((lce->lce_flags & L_DOMATCH) && (nmatch != 0))
+	       retval = 1;
+       else
+	       retval = 0; 
+
 bad:
 	if (res0)
 		ldap_msgfree(res0);

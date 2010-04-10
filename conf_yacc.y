@@ -23,7 +23,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: conf_yacc.y,v 1.106 2010/01/12 11:18:39 manu Exp $");
+__RCSID("$Id: conf_yacc.y,v 1.107 2010/04/10 05:42:52 manu Exp $");
 #endif
 #endif
 
@@ -1419,12 +1419,24 @@ ldapcheckdef:	LDAPCHECK QSTRING QSTRING ldapcheckdef_flags {
 	;
 
 ldapcheckdef_flags:	ldapcheckdef_flags ldapcheckdef_clear
+		|	ldapcheckdef_flags ldapcheckdef_domatch
 		|	
 		;
 
 ldapcheckdef_clear:	 CLEAR { 
 #ifdef USE_LDAP
 				ldapcheck_gflags |= L_CLEARPROP; 
+#else
+			mg_log(LOG_INFO, 
+			    "LDAP support not compiled in, ignore line %d", 
+			    conf_line);
+#endif
+			}
+		;
+
+ldapcheckdef_domatch:	 DOMATCH { 
+#ifdef USE_LDAP
+				ldapcheck_gflags |= L_DOMATCH; 
 #else
 			mg_log(LOG_INFO, 
 			    "LDAP support not compiled in, ignore line %d", 

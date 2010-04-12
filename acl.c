@@ -1,4 +1,4 @@
-/* $Id: acl.c,v 1.96 2010/01/12 11:18:39 manu Exp $ */
+/* $Id: acl.c,v 1.97 2010/04/12 12:04:41 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: acl.c,v 1.96 2010/01/12 11:18:39 manu Exp $");
+__RCSID("$Id: acl.c,v 1.97 2010/04/12 12:04:41 manu Exp $");
 #endif
 #endif
 
@@ -66,6 +66,7 @@ __RCSID("$Id: acl.c,v 1.96 2010/01/12 11:18:39 manu Exp $");
 #include "conf.h"
 #include "sync.h"
 #include "list.h"
+#include "ratelimit.h"
 #ifdef USE_DNSRBL
 #include "dnsrbl.h"
 #endif
@@ -134,6 +135,8 @@ void acl_add_opnum_body(acl_data_t *, void *);
 void acl_add_time(acl_data_t *, void *);
 void acl_add_list(acl_data_t *, void *);
 char *acl_print_macro(acl_data_t *, char *, size_t);
+void acl_add_ratelimit(acl_data_t *, void *);
+char *acl_print_ratelimit(acl_data_t *, char *, size_t);
 #ifdef USE_DNSRBL
 void acl_add_dnsrbl(acl_data_t *, void *);
 char *acl_print_dnsrbl(acl_data_t *, char *, size_t);
@@ -267,6 +270,10 @@ struct acl_clause_rec acl_clause_rec[] = {
 	  AT_LIST, AC_NONE, AC_NONE, EXF_MACRO,
 	  acl_print_list, acl_add_list,
 	  NULL, acl_list_filter },
+	{ AC_RATELIMIT, MULTIPLE_OK, AS_ANY, "ratelimit", 
+	  AT_RATELIMIT, AC_NONE, AC_STRING, 0, /* XXX */
+	  acl_print_ratelimit, acl_add_ratelimit,
+	  NULL, ratelimit_validate },
 #ifdef USE_DNSRBL
 	{ AC_DNSRBL, MULTIPLE_OK, AS_ANY, "dnsrbl", 
 	  AT_DNSRBL, AC_DNSRBL_LIST, AC_STRING, EXF_DNSRBL,
@@ -1385,6 +1392,31 @@ acl_netblock_filter(ad, stage, ap, priv)
 		     ad->netblock.mask))
 		return 1;
 	return 0;
+}
+
+void
+acl_add_ratelimit(ad, data)
+	acl_data_t *ad;
+	void *data;
+{
+	char *ratelimit = data;
+	
+	if ((ad->ratelimit_conf = ratelimit_byname(ratelimit)) == NULL) {
+		mg_log(LOG_ERR, "unknown ratelimit class \"%s\"", ratelimit);
+		exit(EX_DATAERR);
+	}
+		
+	return;
+}
+
+char *
+acl_print_ratelimit(ad, buf, len)
+	acl_data_t *ad;
+	char *buf;
+	size_t len;
+{
+	snprintf(buf, len, "\"%s\"", ad->ratelimit_conf->rc_name);
+	return buf;
 }
 
 #ifdef USE_DNSRBL

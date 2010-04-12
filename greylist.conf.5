@@ -1,7 +1,7 @@
 .\"
-.\" $Id: greylist.conf.5,v 1.99 2010/04/10 05:42:52 manu Exp $
+.\" $Id: greylist.conf.5,v 1.100 2010/04/12 12:04:41 manu Exp $
 .\"
-.\" Copyright (c) 2004-2009 Emmanuel Dreyfus
+.\" Copyright (c) 2004-2010 Emmanuel Dreyfus
 .\" All rights reserved.
 .\"
 .\" Redistribution and use in source and binary forms, with or without
@@ -833,6 +833,30 @@ statement, note that the scheme and host part of the URL are ignored.
 Servers listed in
 .I ldapconf
 are used instead.
+.PP
+.SH RATE LIMIT
+The 
+.I ratelimit
+keyword specifies a ratelimit configuration to be used in access lists. It
+must be followed by the rate limit configuration name, the maximum of
+messages, the sampling period. Example:
+.IP
+  ratelimit "internalclients" 100 / 1m
+.PP
+The 
+.I ratelimit 
+keyword can also have an option 
+.I key 
+statement, which determine the set of key for message accounting. The
+default is
+.I %i
+for per IP address accounting (see the
+.B FORMAT STRINGS
+sections for the possible syntax of this field). Here is an example
+that configures a rate limit of 100 messages per hour
+for each individual recipient-IP set.
+.IP
+ratelimit "internalclients" 100 / 1h key "%r%i"
 .PP
 .SH CUSTOM REPORTS
 The 

@@ -1,8 +1,7 @@
-#ifndef _STORE_H_
-#define _STORE_H_
+/* $Id: ratelimit.h,v 1.1 2010/04/12 12:04:41 manu Exp $ */
 
 /*
- * Copyright (c) 2009 Emmanuel Dreyfus
+ * Copyright (c) 2010 Emmanuel Dreyfus
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,68 +28,47 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef _RATELIMIT_H_
+#define _RATELIMIT_H_
 
-struct tuple_fields {
-	struct sockaddr *sa;
-	socklen_t salen;
-        char    *from;
-        char    *rcpt;
-	time_t	*remaining;	/* report back remaining 
-				   time before activation */
-	time_t	*elapsed;	/* report back elapsed time 
-				   since first encounter */
-	char	*queueid;	/* for logging purposes */
-	time_t	gldelay;	/* delay time for new greylist entry */
-	time_t	autowhite;	/* time-out for autowhite entry */
-	int	count;		/* count for ratelimit */
-	tuple_update_type_t	/* update to autowhite or tarpit? */
-		updatetype;
-	int	acl_line;	/* acl line number */
+#include "config.h"
+#ifdef HAVE_OLD_QUEUE_H
+#include "queue.h"
+#else 
+#include <sys/queue.h>
+#endif
+
+#include <stdio.h>
+#include <pthread.h>
+#include <sys/time.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#ifndef RATELIMIT_SAMPLES
+#define RATELIMIT_SAMPLES 10
+#endif
+
+#include "milter-greylist.h"
+
+struct ratelimit_conf {
+        char rc_name[QSTRLEN + 1];
+	size_t rc_limit;
+	time_t rc_time;
+	char rc_key[QSTRLEN + 1];
+	LIST_ENTRY(ratelimit_conf) rc_list;
 };
 
-/* 
- * initialize storage backend 
- */
-void mg_init();		
+struct ratelimitacct_bucket { 
+	TAILQ_HEAD(, ratelimit_acct) b_ratelimitacct_head;
+};    
 
-/* 
- * start storage background threads 
- */
-void mg_start();
 
-/* 
- * check tuple status, add and update if necessary 
- */
-tuple_t mg_tuple_check(struct tuple_fields *);
+void ratelimit_init(void);
+void ratelimit_conf_add(char *, size_t, time_t, char *);  
+void ratelimit_clear(void);
+struct ratelimit_conf *ratelimit_byname(char *);
+int ratelimit_validate(acl_data_t *, acl_stage_t, 
+		       struct acl_param *, struct mlfi_priv *);
 
-/* 
- * Remove pending entry
- */
-void mg_tuple_remove(struct tuple_fields *);
-
-/* 
- * Check pending list for tarpit entry
- */
-time_t mg_tarpit_check(struct tuple_fields *);
-
-/* 
- * update tuple status 
- */
-void mg_tuple_update(struct tuple_fields *);
-
-/* 
- * in case backend needs cleaning up 
- */
-int mg_tuple_vacuum();
-
-/* 
- * stop storage background threads 
- */
-void mg_tuple_stop();
-
-/* 
- * safely close storage backend 
- */
-void mg_tuple_close();                       
-
-#endif /* _STORE_H_ */
+#endif /* _RATELIMIT_H_ */

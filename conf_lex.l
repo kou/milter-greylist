@@ -129,12 +129,13 @@ log_local4	[Ll][Oo][Cc][Aa][Ll]4
 log_local5	[Ll][Oo][Cc][Aa][Ll]5
 log_local6	[Ll][Oo][Cc][Aa][Ll]6
 log_local7	[Ll][Oo][Cc][Aa][Ll]7
-
 p0fsock		[Pp]0[Ff][Ss][Oo][Cc][Kk]
 p0f		[Pp]0[Ff]
 spamdsock	[Ss][Pp][Aa][Mm][Dd][Ss][Oo][Cc][Kk]
 spamdsockt	[Ii][Nn][Ee][Tt]|[Uu][Nn][Ii][Xx]
 spamd		[Ss][Pp][Aa][Mm][Dd]
+ratelimit	[Rr][Aa][Tt][Ee][Ll][Ii][Mm][Ii][Tt]
+key		[Kk][Ee][Yy]
 openlist	"{"
 closelist	"}"
 nextln		"\\".*"\n"
@@ -169,7 +170,7 @@ mx		[Mm][Xx]
 	#ifndef HAVE_BROKEN_RCSID
 	#include <sys/cdefs.h>
 	#ifdef __RCSID
-	__RCSID("$Id: conf_lex.l,v 1.95 2010/04/10 05:42:52 manu Exp $");
+	__RCSID("$Id: conf_lex.l,v 1.96 2010/04/12 12:04:41 manu Exp $");
 	#endif
 	#endif
 	#endif
@@ -312,6 +313,8 @@ mx		[Mm][Xx]
 <S_LOGFAC>{log_local6}	{ BEGIN(0); return LOGFAC_LOCAL6; }
 <S_LOGFAC>{log_local7}	{ BEGIN(0); return LOGFAC_LOCAL7; }
 <S_LOGFAC>{none}	{ BEGIN(0); return NONE; }
+{ratelimit}	{ return RATELIMIT; }
+{key}		{ return KEY; }
 {report}	{ return REPORT; }
 <INITIAL>{none}	{ return NONE; }
 {stat}		{ return STAT; }
@@ -343,7 +346,7 @@ mx		[Mm][Xx]
 {mx}            {       return MX; }
 <INITIAL>{star}		{ return STAR; }
 <S_CLOCKSPEC2>{star}	{ return STAR; }
-<S_CLOCKSPEC2>{slash}	{ return SLASH; }
+<S_CLOCKSPEC2,INITIAL>{slash}	{ return SLASH; }
 <S_CLOCKSPEC2>{minus}	{ return MINUS; }
 <S_CLOCKSPEC2>{comma}	{ return COMMA; }
 {drac}		{ return DRAC; }

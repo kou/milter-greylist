@@ -1,4 +1,4 @@
-/* $Id: pending.c,v 1.91 2009/10/31 21:28:03 manu Exp $ */
+/* $Id: pending.c,v 1.92 2010/04/12 12:04:41 manu Exp $ */
 
 /*
  * Copyright (c) 2004 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: pending.c,v 1.91 2009/10/31 21:28:03 manu Exp $");
+__RCSID("$Id: pending.c,v 1.92 2010/04/12 12:04:41 manu Exp $");
 #endif
 #endif
 
@@ -73,7 +73,6 @@ __RCSID("$Id: pending.c,v 1.91 2009/10/31 21:28:03 manu Exp $");
 #include <dmalloc.h> 
 #endif
 
-void pending_init(void);
 tuple_t pending_check(struct sockaddr *, socklen_t, char *, char *, 
     time_t *, time_t *, char *, time_t, time_t);
 time_t pending_tarpitted(struct sockaddr *, socklen_t, char *, char *);

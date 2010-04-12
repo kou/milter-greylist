@@ -15,7 +15,7 @@
 %token LOGFAC_LOCAL0 LOGFAC_LOCAL1 LOGFAC_LOCAL2 LOGFAC_LOCAL3 LOGFAC_LOCAL4
 %token LOGFAC_LOCAL5 LOGFAC_LOCAL6 LOGFAC_LOCAL7 P0F P0FSOCK DKIMCHECK
 %token SPAMDSOCK SPAMDSOCKT SPAMD DOMAINEXACT ADDHEADER NOLOG LDAPBINDDN 
-%token LDAPBINDPW TARPIT TARPIT_SCOPE SESSION COMMAND MX
+%token LDAPBINDPW TARPIT TARPIT_SCOPE SESSION COMMAND MX RATELIMIT KEY
 
 %{
 #include "config.h"
@@ -23,7 +23,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: conf_yacc.y,v 1.107 2010/04/10 05:42:52 manu Exp $");
+__RCSID("$Id: conf_yacc.y,v 1.108 2010/04/12 12:04:41 manu Exp $");
 #endif
 #endif
 
@@ -41,6 +41,7 @@ __RCSID("$Id: conf_yacc.y,v 1.107 2010/04/10 05:42:52 manu Exp $");
 #include "sync.h"
 #include "list.h"
 #include "macro.h"
+#include "ratelimit.h"
 #ifdef USE_DNSRBL
 #include "dnsrbl.h"
 #endif
@@ -64,6 +65,7 @@ __RCSID("$Id: conf_yacc.y,v 1.107 2010/04/10 05:42:52 manu Exp $");
 #endif
 #include "stat.h"
 #include "clock.h"
+#include "ratelimit.h"
 #include "spf.h"
 #include "milter-greylist.h"
 
@@ -166,6 +168,7 @@ lines	:	lines netblock '\n'
 	|	lines listdef '\n'
 	|	lines domainexact '\n'
 	|	lines syncmaxqlen '\n'
+	|	lines ratelimitdef '\n'
 	|	lines '\n'
 	|
 	;
@@ -776,6 +779,23 @@ syncmaxqlen:	SYNCMAXQLEN TNUMBER { conf.c_syncmaxqlen = atoi($2) ;
 		}
 	;
 
+ratelimitdef:	RATELIMIT QSTRING TNUMBER SLASH TDELAY {
+			char name[QSTRLEN + 1];
+
+			ratelimit_conf_add(quotepath(name, $2, QSTRLEN),
+					   humanized_atoi($3),
+					   humanized_atoi($5), NULL);
+		}
+	|	RATELIMIT QSTRING TNUMBER SLASH TDELAY KEY QSTRING {
+			char name[QSTRLEN + 1];
+			char key[QSTRLEN + 1];
+			ratelimit_conf_add(quotepath(name, $2, QSTRLEN),
+					   humanized_atoi($3),
+					   humanized_atoi($5), 
+					   quotepath(key, $7, QSTRLEN));
+		}
+	;
+
 access_list:	ACL GREYLIST  acl_entry { 
 			acl_register_entry_last(AS_RCPT, A_GREYLIST);
 		}
@@ -842,6 +862,7 @@ acl_clause:	helo_clause
 	|	dnsrbl_clause
 	|	mx_clause
 	|	macro_clause
+	|	ratelimit_clause
 	|	urlcheck_clause
 	|	ldapcheck_clause
 	|	p0f_clause
@@ -1088,6 +1109,14 @@ macro_clause:	SM_MACRO QSTRING {
 			char qstring[QSTRLEN + 1];
 
 			acl_add_clause(AC_MACRO,
+				       quotepath(qstring, $2, QSTRLEN));
+		}
+	;
+
+ratelimit_clause:RATELIMIT QSTRING {
+			char qstring[QSTRLEN + 1];
+
+			acl_add_clause(AC_RATELIMIT,
 				       quotepath(qstring, $2, QSTRLEN));
 		}
 	;

@@ -1,4 +1,4 @@
-/* $Id: acl.h,v 1.42 2009/10/31 21:28:03 manu Exp $ */
+/* $Id: acl.h,v 1.43 2010/04/12 12:04:41 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -53,7 +53,7 @@ typedef enum { AS_NONE, AS_RCPT, AS_DATA, AS_ANY, } acl_stage_t;
 typedef enum { AT_NONE, AT_STRING, AT_REGEX, AT_NETBLOCK, AT_OPNUM, 
 	       AT_CLOCKSPEC, AT_DNSRBL, AT_MX, AT_URLCHECK, AT_MACRO, 
 	       AT_LIST, AT_PROP, AT_SPF, AT_DKIM, 
-	       AT_LDAPCHECK, AT_TIME } acl_data_type_t;
+	       AT_LDAPCHECK, AT_TIME, AT_RATELIMIT } acl_data_type_t;
 
 typedef enum {
 	AC_NONE,
@@ -112,6 +112,7 @@ typedef enum {
 	AC_SA,
 	AC_SASCORE,
 	AC_TARPIT,
+	AC_RATELIMIT,
 } acl_clause_t;
 
 struct acl_clause;
@@ -207,6 +208,7 @@ typedef union acl_data {
 	enum spf_status dkim_status;
 #endif
 	time_t time;
+	struct ratelimit_conf *ratelimit_conf;
 } acl_data_t;
 
 struct acl_clause_rec {

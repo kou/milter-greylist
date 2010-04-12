@@ -1,4 +1,4 @@
-/* $Id: pending.h,v 1.42 2009/10/31 21:28:03 manu Exp $ */
+/* $Id: pending.h,v 1.43 2010/04/12 12:04:41 manu Exp $ */
 /* vim: set sw=8 ts=8 sts=8 noet cino=(0: */
 
 /*
@@ -69,6 +69,7 @@
 #include "milter-greylist.h"
 
 typedef enum {
+	T_RATELIMIT = 4, /* Should not be in this header */
 	T_TARPIT = 3,
 	T_AUTOWHITE = 2,
 	T_PENDING = 1,

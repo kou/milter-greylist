@@ -1,0 +1,305 @@
+/* $Id: ratelimit.c,v 1.1 2010/04/12 12:04:41 manu Exp $ */
+
+/*
+ * Copyright (c) 2010 Emmanuel Dreyfus
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *        This product includes software developed by Emmanuel Dreyfus
+ *
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,  
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include "config.h"
+
+#ifdef HAVE_SYS_CDEFS_H
+#include <sys/cdefs.h>
+#ifdef __RCSID  
+__RCSID("$Id: ratelimit.c,v 1.1 2010/04/12 12:04:41 manu Exp $");
+#endif
+#endif
+
+#ifdef HAVE_OLD_QUEUE_H 
+#include "queue.h"
+#else
+#include <sys/queue.h>
+#endif
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#include <strings.h>
+#include <pthread.h>
+#include <errno.h>
+#include <time.h>
+#include <sysexits.h>
+#include <syslog.h>
+
+#include <sys/types.h>
+#include <sys/param.h>
+#include <sys/time.h>
+#include <sys/socket.h>
+
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include "sync.h"
+#include "dump.h"
+#include "conf.h"
+#include "acl.h"
+#include "ratelimit.h"
+#include "milter-greylist.h"
+
+#ifdef USE_DMALLOC
+#include <dmalloc.h> 
+#endif
+
+#define RATELIMIT_BUCKETS 8192
+
+LIST_HEAD(ratelimitconflist, ratelimit_conf);
+
+struct ratelimitacct_bucket *ratelimitacct_buckets; /* notyet */
+struct ratelimitconflist ratelimitconf_head;
+
+LIST_HEAD(ratelimitacctlist, ratelimit_acct); 
+ 
+struct ratelimit_acct {
+	char ra_key[QSTRLEN + 1];
+	time_t ra_time;	/* timestamp for oldest period */
+	size_t ra_samples[RATELIMIT_SAMPLES];
+        LIST_ENTRY(ratelimit_acct) ra_list;
+}; 
+
+struct ratelimitacctlist ratelimitacct_head;
+
+/* protects ratelimitacct_head and ratelimitacct_buckets */
+pthread_mutex_t ratelimit_lock = PTHREAD_MUTEX_INITIALIZER;
+#define RATELIMIT_LOCK pthread_mutex_lock(&ratelimit_lock);
+#define RATELIMIT_UNLOCK pthread_mutex_unlock(&ratelimit_lock);
+
+void
+ratelimit_init(void) {
+	LIST_INIT(&ratelimitconf_head);
+
+#ifdef notyet
+	if ((ratelimitacct_buckets = calloc(RATELIMIT_BUCKETS,
+	    sizeof(*ratelimitacct_buckets))) == NULL) {
+		mg_log(LOG_ERR, 
+		    "Unable to allocate reatelimit buckets: %s",
+		    strerror(errno));
+		exit(EX_OSERR);
+	}
+
+	for(i = 0; i < RATELIMIT_BUCKETS; i++) 
+		TAILQ_INIT(&ratelimitacct_buckets[i].b_ratelimitacct_head);
+#endif /* notyet */
+
+	return;
+}
+
+struct ratelimit_conf *
+ratelimit_byname(ratelimit)	/* acllist must be read locked */
+	char *ratelimit;
+{
+	struct ratelimit_conf *rc;	
+
+	LIST_FOREACH(rc, &ratelimitconf_head, rc_list) {
+		if (strcmp(rc->rc_name, ratelimit) == 0)
+			break;
+	}
+
+	return rc;
+}
+
+void
+ratelimit_conf_add(name, limit, time, key)
+	char *name;
+	size_t limit;
+	time_t time;
+	char *key;
+{
+	struct ratelimit_conf *rc;
+
+	if (ratelimit_byname(name) != NULL) {
+		mg_log(LOG_ERR, 
+		    "ratelimit class \"%s\" specified twice at line %d",
+		    name,  conf_line - 1);
+		exit(EX_DATAERR);
+	}
+
+	if ((rc = malloc(sizeof(*rc))) == NULL) {
+		mg_log(LOG_ERR, 
+		    "Unable to allocate ratelimit class: %s", 
+		    strerror(errno));
+		exit(EX_OSERR);
+	}
+
+	strncpy(rc->rc_name, name, sizeof(rc->rc_name));
+	rc->rc_limit = limit;
+	rc->rc_time = time;
+	if (key == NULL) 
+		key = "%i";
+	strncpy(rc->rc_key, key, sizeof(rc->rc_key));
+
+	LIST_INSERT_HEAD(&ratelimitconf_head, rc, rc_list);
+
+	return;
+}
+
+void
+ratelimit_clear(void)	/* acllist must be write locked */
+{
+	struct ratelimit_conf *rc;
+
+	while(!LIST_EMPTY(&ratelimitconf_head)) {
+		rc = LIST_FIRST(&ratelimitconf_head);
+		LIST_REMOVE(rc, rc_list);
+		free(rc);
+	}
+
+#ifdef notyet
+	free(ratelimitacct_buckets);
+#endif /* notyet */
+
+	ratelimit_init();
+
+	return;
+}
+
+int	
+ratelimit_validate(ad, stage, ap, priv)
+	acl_data_t *ad;
+	acl_stage_t stage;
+	struct acl_param *ap;
+	struct mlfi_priv *priv;
+{
+	struct ratelimit_conf *rc;
+	struct ratelimit_acct *ra;
+	struct ratelimit_acct *ra_next;
+	char *key;
+	struct timeval now;
+	time_t slot_len;
+	int i, old_index, new_index;
+	size_t total = 0;
+	int retval = 0;
+
+	rc = ad->ratelimit_conf;
+	(void)gettimeofday(&now, NULL);
+	key = fstring_expand(priv, priv->priv_cur_rcpt, rc->rc_key);
+
+	RATELIMIT_LOCK;
+
+	/* 
+	 * Lookup existing accounting for this key
+	 */
+	for (ra = LIST_FIRST(&ratelimitacct_head); ra; ra = ra_next) {
+		ra_next = LIST_NEXT(ra, ra_list);
+
+		/* 
+		 * Remove obsolete accounting
+		 */
+		if (ra->ra_time + rc->rc_time < now.tv_sec) {
+			LIST_REMOVE(ra, ra_list);
+			free(ra);
+			continue;
+		}
+
+		if (strcmp(ra->ra_key, key) == 0)
+			break;
+	}
+
+	/* 
+	 * No match, create a new one
+	 */
+	if (ra == NULL) {
+		int i;
+
+		if ((ra = malloc(sizeof(*ra))) == NULL) {
+			mg_log(LOG_ERR, "malloc failed: %s", strerror(errno));
+			exit(EX_OSERR);
+		}
+
+		strncpy(ra->ra_key, key, sizeof(ra->ra_key));
+		ra->ra_time = now.tv_sec;
+		for (i = 0; i < RATELIMIT_SAMPLES; i++)
+			ra->ra_samples[i] = 0;
+
+		LIST_INSERT_HEAD(&ratelimitacct_head, ra, ra_list);
+	}
+
+	/*
+	 * Compute the index to use in samples
+	 */
+	slot_len = rc->rc_time / RATELIMIT_SAMPLES;
+	old_index = (ra->ra_time / slot_len) % RATELIMIT_SAMPLES;
+	new_index = (now.tv_sec / slot_len) % RATELIMIT_SAMPLES;
+
+	/*
+	 * If some slots were missed, fill them with zeros.
+	 */
+#ifdef CONF_DEBUG
+	mg_log(LOG_DEBUG, "ratelimit \"%s\" key \"%s\"", rc->rc_name, key);
+	mg_log(LOG_DEBUG, "index: old = %d, new = %d", old_index, new_index);
+#endif /* CONF_DEBUG */
+	if (old_index < new_index) {
+		for (i = old_index + 1; i < new_index; i++) 
+			ra->ra_samples[i] = 0;
+	} else {
+		for (i = old_index + 1; i < RATELIMIT_SAMPLES; i++) 
+			ra->ra_samples[i] = 0;
+		for (i = 0; i < new_index; i++) 
+			ra->ra_samples[i] = 0;
+	}
+
+	/*
+	 * Set latest sample
+	 */
+	ra->ra_time = now.tv_sec;
+	ra->ra_samples[new_index]++;
+
+		
+	/* 
+	 * Check total
+	 */
+	total = 0;
+	for (i = 0; i < RATELIMIT_SAMPLES; i++)
+		total += ra->ra_samples[i];
+
+#ifdef CONF_DEBUG
+	for (i = 0; i < RATELIMIT_SAMPLES; i++)
+		mg_log(LOG_DEBUG, "sample[%d] = %d ", i, ra->ra_samples[i]);
+	mg_log(LOG_DEBUG, "total = %d", total);
+#endif /* CONF_DEBUG */
+	if (total > rc->rc_limit) {
+		mg_log(LOG_WARNING, 
+		       "ratelimit overflow for class %s: %d messages, "
+		       "limit is %d msg / %d sec, key = \"%s\"", 
+		       rc->rc_name, total, rc->rc_limit, rc->rc_time, key);
+		retval = 1;
+	}
+
+	RATELIMIT_UNLOCK;
+	free(key);
+
+	return retval;
+}

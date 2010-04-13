@@ -1,4 +1,4 @@
-/* $Id: conf.c,v 1.65 2010/03/13 06:57:47 manu Exp $ */
+/* $Id: conf.c,v 1.66 2010/04/13 04:29:36 manu Exp $ */
 
 /*
  * Copyright (c) 2004 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: conf.c,v 1.65 2010/03/13 06:57:47 manu Exp $");
+__RCSID("$Id: conf.c,v 1.66 2010/04/13 04:29:36 manu Exp $");
 #endif
 #endif
 
@@ -181,9 +181,7 @@ conf_load_internal(timestamp)
 		if (stat(legacy_conffile, &st) == 0) {
 			mg_log(LOG_WARNING,
 			       "legacy configuration file '%s' is used "
-			       "instead of '%s'. IT SHOULD BE RENAMED!",
-			       legacy_conffile,
-			       conffile);
+			       "instead of '%s'.", legacy_conffile, conffile);
 			conffile = legacy_conffile;
 		}
 	}

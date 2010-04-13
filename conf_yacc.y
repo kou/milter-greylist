@@ -16,6 +16,7 @@
 %token LOGFAC_LOCAL5 LOGFAC_LOCAL6 LOGFAC_LOCAL7 P0F P0FSOCK DKIMCHECK
 %token SPAMDSOCK SPAMDSOCKT SPAMD DOMAINEXACT ADDHEADER NOLOG LDAPBINDDN 
 %token LDAPBINDPW TARPIT TARPIT_SCOPE SESSION COMMAND MX RATELIMIT KEY
+%token DOMATCH
 
 %{
 #include "config.h"
@@ -23,7 +24,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: conf_yacc.y,v 1.108 2010/04/12 12:04:41 manu Exp $");
+__RCSID("$Id: conf_yacc.y,v 1.109 2010/04/13 03:56:47 manu Exp $");
 #endif
 #endif
 

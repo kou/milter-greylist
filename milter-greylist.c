@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.227 2010/02/15 16:38:03 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.228 2010/04/13 04:28:12 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.227 2010/02/15 16:38:03 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.228 2010/04/13 04:28:12 manu Exp $");
 #endif
 #endif
 
@@ -3098,7 +3098,6 @@ fstring_expand(priv, rcpt, fstring)
 				snprintf(buf, sizeof(buf), "%d", 
 				   priv->priv_sr.sr_acl_line); 
 				mystrncat(&outstr, buf, &outmaxlen);
-				mystrncat(&outstr, "(none)", &outmaxlen);
 			}
 			break;
 		}	

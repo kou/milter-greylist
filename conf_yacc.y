@@ -24,7 +24,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: conf_yacc.y,v 1.109 2010/04/13 03:56:47 manu Exp $");
+__RCSID("$Id: conf_yacc.y,v 1.110 2010/04/14 15:32:25 manu Exp $");
 #endif
 #endif
 
@@ -780,20 +780,20 @@ syncmaxqlen:	SYNCMAXQLEN TNUMBER { conf.c_syncmaxqlen = atoi($2) ;
 		}
 	;
 
-ratelimitdef:	RATELIMIT QSTRING TNUMBER SLASH TDELAY {
+ratelimitdef:	RATELIMIT QSTRING RCPT TNUMBER SLASH TDELAY {
 			char name[QSTRLEN + 1];
 
 			ratelimit_conf_add(quotepath(name, $2, QSTRLEN),
-					   humanized_atoi($3),
-					   humanized_atoi($5), NULL);
+					   humanized_atoi($4),
+					   humanized_atoi($6), NULL);
 		}
-	|	RATELIMIT QSTRING TNUMBER SLASH TDELAY KEY QSTRING {
+	|	RATELIMIT QSTRING RCPT TNUMBER SLASH TDELAY KEY QSTRING {
 			char name[QSTRLEN + 1];
 			char key[QSTRLEN + 1];
 			ratelimit_conf_add(quotepath(name, $2, QSTRLEN),
-					   humanized_atoi($3),
-					   humanized_atoi($5), 
-					   quotepath(key, $7, QSTRLEN));
+					   humanized_atoi($4),
+					   humanized_atoi($6), 
+					   quotepath(key, $8, QSTRLEN));
 		}
 	;
 

@@ -1,5 +1,5 @@
 .\"
-.\" $Id: greylist.conf.5,v 1.101 2010/04/12 12:09:57 manu Exp $
+.\" $Id: greylist.conf.5,v 1.102 2010/04/14 15:32:25 manu Exp $
 .\"
 .\" Copyright (c) 2004-2010 Emmanuel Dreyfus
 .\" All rights reserved.
@@ -838,10 +838,11 @@ are used instead.
 The 
 .I ratelimit
 keyword specifies a ratelimit configuration to be used in access lists. It
-must be followed by the rate limit configuration name, the maximum of
-messages, the sampling period. Example:
+must be followed by the rate limit configuration name, what is being 
+accounted (for now only recipients) the maximum of messages, the sampling 
+period. Example:
 .IP
-  ratelimit "internalclients" 10 / 1m
+  ratelimit "internalclients" rcpt 10 / 1m
 
   racl blacklist addr 192.0.2.0/24 ratelimit "internalclients" \\
 	msg "you speak too much"
@@ -859,7 +860,7 @@ sections for the possible syntax of this field). Here is an example
 that configures a rate limit of 100 messages per hour
 for each individual recipient-IP set.
 .IP
-  ratelimit "internalclients" 100 / 1h key "%r%i"
+  ratelimit "internalclients" rcpt 100 / 1h key "%r%i"
 
   racl blacklist addr 192.0.2.0/24 ratelimit "internalclients" \\
 	msg "you speak too much"

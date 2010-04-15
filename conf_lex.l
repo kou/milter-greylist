@@ -170,7 +170,7 @@ mx		[Mm][Xx]
 	#ifndef HAVE_BROKEN_RCSID
 	#include <sys/cdefs.h>
 	#ifdef __RCSID
-	__RCSID("$Id: conf_lex.l,v 1.96 2010/04/12 12:04:41 manu Exp $");
+	__RCSID("$Id: conf_lex.l,v 1.97 2010/04/15 07:51:29 manu Exp $");
 	#endif
 	#endif
 	#endif
@@ -346,7 +346,7 @@ mx		[Mm][Xx]
 {mx}            {       return MX; }
 <INITIAL>{star}		{ return STAR; }
 <S_CLOCKSPEC2>{star}	{ return STAR; }
-<S_CLOCKSPEC2,INITIAL>{slash}	{ return SLASH; }
+<*>{slash}	{ return SLASH; }
 <S_CLOCKSPEC2>{minus}	{ return MINUS; }
 <S_CLOCKSPEC2>{comma}	{ return COMMA; }
 {drac}		{ return DRAC; }

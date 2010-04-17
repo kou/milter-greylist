@@ -2,7 +2,7 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Build environnement */
-#define BUILD_ENV "manu@bacasable.net.espci.fr:/home2/manu/milter-greylist-current Sun Apr 11 21:15:17 CEST 2010"
+#define BUILD_ENV "manu@adipocyte.hcpnet.net:/home/manu/milter-greylist-current Sat Apr 17 08:55:42 CEST 2010"
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #define HAVE_ARPA_INET_H 1
@@ -178,13 +178,13 @@
 #define PACKAGE_NAME "milter-greylist"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "milter-greylist 4.3.5"
+#define PACKAGE_STRING "milter-greylist 4.3.6"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "milter-greylist"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "4.3.5"
+#define PACKAGE_VERSION "4.3.6"
 
 /* Define to the type of arg 1 for `select'. */
 #define SELECT_TYPE_ARG1 int

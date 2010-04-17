@@ -1,4 +1,4 @@
-/* $Id: conf.c,v 1.66 2010/04/13 04:29:36 manu Exp $ */
+/* $Id: conf.c,v 1.67 2010/04/17 09:04:47 manu Exp $ */
 
 /*
  * Copyright (c) 2004 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: conf.c,v 1.66 2010/04/13 04:29:36 manu Exp $");
+__RCSID("$Id: conf.c,v 1.67 2010/04/17 09:04:47 manu Exp $");
 #endif
 #endif
 
@@ -175,17 +175,6 @@ conf_load_internal(timestamp)
 		mg_log(LOG_INFO, "%sloading config file \"%s\"", 
 		    conf_cold ? "" : "re", conffile);
 
-	if (!conf_specified && strcmp(conffile, legacy_conffile) != 0) {
-		struct stat st;
-
-		if (stat(legacy_conffile, &st) == 0) {
-			mg_log(LOG_WARNING,
-			       "legacy configuration file '%s' is used "
-			       "instead of '%s'.", legacy_conffile, conffile);
-			conffile = legacy_conffile;
-		}
-	}
-
 	errno = 0;
 	if ((stream = Fopen(conffile, "r")) == NULL) {
 		mg_log(LOG_ERR, "cannot open config file %s: %s", 
@@ -266,8 +255,20 @@ void
 conf_load(void) {
 	struct stat st;
 
+	if (!conf_specified && strcmp(conffile, legacy_conffile) != 0) {
+		struct stat st;
+
+		if (stat(legacy_conffile, &st) == 0) {
+			mg_log(LOG_WARNING,
+			       "legacy configuration file '%s' is used "
+			       "instead of '%s'.", legacy_conffile, conffile);
+			conffile = legacy_conffile;
+		}
+	}
+
 	if (stat(conffile, &st))
 		st.st_mtime = (time_t)0;
+
 	conf_load_internal(&st.st_mtime);
 }
 

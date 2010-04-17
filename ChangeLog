@@ -1,3 +1,5 @@
+4.3.7
+	Test for legacy config file timestamp so that it does not loop reloading
 4.3.6
 	New rate limiting feature
 	Add a domatch keyword to ldapconf to enable ldapcheck matches

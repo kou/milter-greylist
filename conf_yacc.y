@@ -16,7 +16,7 @@
 %token LOGFAC_LOCAL5 LOGFAC_LOCAL6 LOGFAC_LOCAL7 P0F P0FSOCK DKIMCHECK
 %token SPAMDSOCK SPAMDSOCKT SPAMD DOMAINEXACT ADDHEADER NOLOG LDAPBINDDN 
 %token LDAPBINDPW TARPIT TARPIT_SCOPE SESSION COMMAND MX RATELIMIT KEY
-%token DOMATCH
+%token DOMATCH DATA
 
 %{
 #include "config.h"
@@ -24,7 +24,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: conf_yacc.y,v 1.110 2010/04/14 15:32:25 manu Exp $");
+__RCSID("$Id: conf_yacc.y,v 1.111 2010/04/18 04:03:56 manu Exp $");
 #endif
 #endif
 
@@ -99,6 +99,7 @@ void conf_error(char *);
 	enum spf_status spf_status;
 	enum spf_status dkim_status;
 	char spamdsockt[QSTRLEN + 1];
+	int ratelimit_type;
 	}
 %type <ipaddr> IPADDR;
 %type <ip6addr> IP6ADDR;
@@ -783,15 +784,45 @@ syncmaxqlen:	SYNCMAXQLEN TNUMBER { conf.c_syncmaxqlen = atoi($2) ;
 ratelimitdef:	RATELIMIT QSTRING RCPT TNUMBER SLASH TDELAY {
 			char name[QSTRLEN + 1];
 
-			ratelimit_conf_add(quotepath(name, $2, QSTRLEN),
-					   humanized_atoi($4),
+			ratelimit_conf_add(quotepath(name, $2, QSTRLEN), 
+					   RL_RCPT, humanized_atoi($4),
 					   humanized_atoi($6), NULL);
 		}
 	|	RATELIMIT QSTRING RCPT TNUMBER SLASH TDELAY KEY QSTRING {
 			char name[QSTRLEN + 1];
 			char key[QSTRLEN + 1];
-			ratelimit_conf_add(quotepath(name, $2, QSTRLEN),
-					   humanized_atoi($4),
+			ratelimit_conf_add(quotepath(name, $2, QSTRLEN), 
+					   RL_RCPT, humanized_atoi($4),
+					   humanized_atoi($6), 
+					   quotepath(key, $8, QSTRLEN));
+		}
+	|	RATELIMIT QSTRING SESSION TNUMBER SLASH TDELAY {
+			char name[QSTRLEN + 1];
+
+			ratelimit_conf_add(quotepath(name, $2, QSTRLEN), 
+					   RL_SESS, humanized_atoi($4),
+					   humanized_atoi($6), NULL);
+		}
+	|	RATELIMIT QSTRING SESSION TNUMBER SLASH TDELAY KEY QSTRING {
+			char name[QSTRLEN + 1];
+			char key[QSTRLEN + 1];
+			ratelimit_conf_add(quotepath(name, $2, QSTRLEN), 
+					   RL_SESS, humanized_atoi($4),
+					   humanized_atoi($6), 
+					   quotepath(key, $8, QSTRLEN));
+		}
+	|	RATELIMIT QSTRING DATA TNUMBER SLASH TDELAY {
+			char name[QSTRLEN + 1];
+
+			ratelimit_conf_add(quotepath(name, $2, QSTRLEN), 
+					   RL_DATA, humanized_atoi($4),
+					   humanized_atoi($6), NULL);
+		}
+	|	RATELIMIT QSTRING DATA TNUMBER SLASH TDELAY KEY QSTRING {
+			char name[QSTRLEN + 1];
+			char key[QSTRLEN + 1];
+			ratelimit_conf_add(quotepath(name, $2, QSTRLEN), 
+					   RL_DATA, humanized_atoi($4),
 					   humanized_atoi($6), 
 					   quotepath(key, $8, QSTRLEN));
 		}

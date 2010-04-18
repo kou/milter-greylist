@@ -1,5 +1,5 @@
 .\"
-.\" $Id: greylist.conf.5,v 1.102 2010/04/14 15:32:25 manu Exp $
+.\" $Id: greylist.conf.5,v 1.103 2010/04/18 04:03:56 manu Exp $
 .\"
 .\" Copyright (c) 2004-2010 Emmanuel Dreyfus
 .\" All rights reserved.
@@ -839,7 +839,13 @@ The
 .I ratelimit
 keyword specifies a ratelimit configuration to be used in access lists. It
 must be followed by the rate limit configuration name, what is being 
-accounted (for now only recipients) the maximum of messages, the sampling 
+accounted (i.e.:
+.I session
+for SMTP sessions, 
+.I rcpt
+for recipients,
+.I data
+for bytes in body and headers), the actual limit, and the sampling 
 period. Example:
 .IP
   ratelimit "internalclients" rcpt 10 / 1m

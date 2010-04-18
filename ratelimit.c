@@ -1,4 +1,4 @@
-/* $Id: ratelimit.c,v 1.1 2010/04/12 12:04:41 manu Exp $ */
+/* $Id: ratelimit.c,v 1.2 2010/04/18 04:03:56 manu Exp $ */
 
 /*
  * Copyright (c) 2010 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: ratelimit.c,v 1.1 2010/04/12 12:04:41 manu Exp $");
+__RCSID("$Id: ratelimit.c,v 1.2 2010/04/18 04:03:56 manu Exp $");
 #endif
 #endif
 
@@ -85,6 +85,7 @@ LIST_HEAD(ratelimitacctlist, ratelimit_acct);
  
 struct ratelimit_acct {
 	char ra_key[QSTRLEN + 1];
+	enum ratelimit_type ra_type;
 	time_t ra_time;	/* timestamp for oldest period */
 	size_t ra_samples[RATELIMIT_SAMPLES];
         LIST_ENTRY(ratelimit_acct) ra_list;
@@ -132,8 +133,9 @@ ratelimit_byname(ratelimit)	/* acllist must be read locked */
 }
 
 void
-ratelimit_conf_add(name, limit, time, key)
+ratelimit_conf_add(name, type, limit, time, key)
 	char *name;
+	enum ratelimit_type type;
 	size_t limit;
 	time_t time;
 	char *key;
@@ -155,6 +157,7 @@ ratelimit_conf_add(name, limit, time, key)
 	}
 
 	strncpy(rc->rc_name, name, sizeof(rc->rc_name));
+	rc->rc_type = type;
 	rc->rc_limit = limit;
 	rc->rc_time = time;
 	if (key == NULL) 
@@ -186,6 +189,7 @@ ratelimit_clear(void)	/* acllist must be write locked */
 	return;
 }
 
+
 int	
 ratelimit_validate(ad, stage, ap, priv)
 	acl_data_t *ad;
@@ -202,6 +206,7 @@ ratelimit_validate(ad, stage, ap, priv)
 	int i, old_index, new_index;
 	size_t total = 0;
 	int retval = 0;
+	char *typestr;
 
 	rc = ad->ratelimit_conf;
 	(void)gettimeofday(&now, NULL);
@@ -224,7 +229,8 @@ ratelimit_validate(ad, stage, ap, priv)
 			continue;
 		}
 
-		if (strcmp(ra->ra_key, key) == 0)
+		if ((strcmp(ra->ra_key, key) == 0) && 
+		    (ra->ra_type == rc->rc_type))
 			break;
 	}
 
@@ -240,6 +246,7 @@ ratelimit_validate(ad, stage, ap, priv)
 		}
 
 		strncpy(ra->ra_key, key, sizeof(ra->ra_key));
+		ra->ra_type = rc->rc_type;
 		ra->ra_time = now.tv_sec;
 		for (i = 0; i < RATELIMIT_SAMPLES; i++)
 			ra->ra_samples[i] = 0;
@@ -275,7 +282,31 @@ ratelimit_validate(ad, stage, ap, priv)
 	 * Set latest sample
 	 */
 	ra->ra_time = now.tv_sec;
-	ra->ra_samples[new_index]++;
+
+	switch (ra->ra_type) {
+	case RL_SESS:
+		typestr = "sessions";
+		if (priv->priv_rcptcount == 0) /* First encounter */
+			ra->ra_samples[new_index]++;
+		break;
+	case RL_RCPT:
+		typestr = "recipients";
+		if (stage == AS_RCPT)
+			ra->ra_samples[new_index]++;
+		else /* stage == AS_DATA */
+			ra->ra_samples[new_index] += priv->priv_rcptcount;
+		break;
+	case RL_DATA:
+		typestr = "bytes";
+		ra->ra_samples[new_index] += priv->priv_msgcount;
+		break;
+	default:
+		mg_log(LOG_ERR, 
+		    "internal error: ra->ra_type = %d", 
+		    ra->ra_type);
+		exit(EX_SOFTWARE);
+		break;
+	}
 
 		
 	/* 
@@ -292,9 +323,10 @@ ratelimit_validate(ad, stage, ap, priv)
 #endif /* CONF_DEBUG */
 	if (total > rc->rc_limit) {
 		mg_log(LOG_WARNING, 
-		       "ratelimit overflow for class %s: %d messages, "
-		       "limit is %d msg / %d sec, key = \"%s\"", 
-		       rc->rc_name, total, rc->rc_limit, rc->rc_time, key);
+		       "ratelimit overflow for class %s: %d, "
+		       "limit is %d %s / %d sec, key = \"%s\"", 
+		       rc->rc_name, total, rc->rc_limit, typestr,
+		       rc->rc_time, key);
 		retval = 1;
 	}
 

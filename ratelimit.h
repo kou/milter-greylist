@@ -1,4 +1,4 @@
-/* $Id: ratelimit.h,v 1.1 2010/04/12 12:04:41 manu Exp $ */
+/* $Id: ratelimit.h,v 1.2 2010/04/18 04:03:56 manu Exp $ */
 
 /*
  * Copyright (c) 2010 Emmanuel Dreyfus
@@ -45,14 +45,17 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "milter-greylist.h"
+
+enum ratelimit_type { RL_SESS, RL_RCPT, RL_DATA };
+
 #ifndef RATELIMIT_SAMPLES
 #define RATELIMIT_SAMPLES 10
 #endif
 
-#include "milter-greylist.h"
-
 struct ratelimit_conf {
         char rc_name[QSTRLEN + 1];
+	enum ratelimit_type rc_type;	
 	size_t rc_limit;
 	time_t rc_time;
 	char rc_key[QSTRLEN + 1];
@@ -65,7 +68,7 @@ struct ratelimitacct_bucket {
 
 
 void ratelimit_init(void);
-void ratelimit_conf_add(char *, size_t, time_t, char *);  
+void ratelimit_conf_add(char *, enum ratelimit_type, size_t, time_t, char *);  
 void ratelimit_clear(void);
 struct ratelimit_conf *ratelimit_byname(char *);
 int ratelimit_validate(acl_data_t *, acl_stage_t, 

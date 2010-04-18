@@ -155,6 +155,7 @@ neg		"!"
 prop		"$"[-_A-Za-z0-9]+
 domainexact	[Dd][Oo][Mm][Aa][Ii][Nn][Ee][Xx][Aa][Cc][Tt]
 mx		[Mm][Xx]
+data		[Dd][Aa][Tt][Aa]
 
 %s S_REGEX 
 %s S_SPF
@@ -170,7 +171,7 @@ mx		[Mm][Xx]
 	#ifndef HAVE_BROKEN_RCSID
 	#include <sys/cdefs.h>
 	#ifdef __RCSID
-	__RCSID("$Id: conf_lex.l,v 1.97 2010/04/15 07:51:29 manu Exp $");
+	__RCSID("$Id: conf_lex.l,v 1.98 2010/04/18 04:03:56 manu Exp $");
 	#endif
 	#endif
 	#endif
@@ -313,7 +314,8 @@ mx		[Mm][Xx]
 <S_LOGFAC>{log_local6}	{ BEGIN(0); return LOGFAC_LOCAL6; }
 <S_LOGFAC>{log_local7}	{ BEGIN(0); return LOGFAC_LOCAL7; }
 <S_LOGFAC>{none}	{ BEGIN(0); return NONE; }
-{ratelimit}	{ return RATELIMIT; }
+{ratelimit}		{ return RATELIMIT; }
+{data}			{ return DATA; }
 {key}		{ return KEY; }
 {report}	{ return REPORT; }
 <INITIAL>{none}	{ return NONE; }

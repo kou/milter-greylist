@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.229 2010/04/18 03:55:41 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.230 2010/04/18 04:03:56 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.229 2010/04/18 03:55:41 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.230 2010/04/18 04:03:56 manu Exp $");
 #endif
 #endif
 
@@ -888,10 +888,11 @@ real_body(ctx, chunk, size)
 		return stat;
 #endif
 
+	priv->priv_msgcount += size;
+
 	/* Avoid copying the whole message to save CPU */
 	if ((priv->priv_msgcount > conf.c_maxpeek) || 
 	    (priv->priv_buflen > conf.c_maxpeek)) {
-		priv->priv_msgcount += size;
 		mg_log(LOG_DEBUG, "ignoring message beyond maxpeek = %d", 
 		    conf.c_maxpeek);
 		return SMFIS_CONTINUE;

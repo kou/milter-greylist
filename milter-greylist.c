@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.228 2010/04/13 04:28:12 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.229 2010/04/18 03:55:41 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.228 2010/04/13 04:28:12 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.229 2010/04/18 03:55:41 manu Exp $");
 #endif
 #endif
 
@@ -111,6 +111,7 @@ static int check_drac(char *dotted_ip);
 #include "p0f.h"
 #endif
 #include "macro.h"
+#include "ratelimit.h"
 
 #ifdef USE_DMALLOC
 #include <dmalloc.h> 
@@ -1622,6 +1623,7 @@ main(argc, argv)
 	geoip_init();
 #endif
 	macro_init();
+	ratelimit_init();
 
 #ifdef USE_FD_POOL
         /* initialize file descriptor pool */

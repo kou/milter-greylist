@@ -1,4 +1,5 @@
 4.3.7
+	Fix missing ratelimit initialization 
 	Test for legacy config file timestamp so that it does not loop reloading
 4.3.6
 	New rate limiting feature

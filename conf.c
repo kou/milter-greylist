@@ -1,4 +1,4 @@
-/* $Id: conf.c,v 1.67 2010/04/17 09:04:47 manu Exp $ */
+/* $Id: conf.c,v 1.68 2010/04/18 03:55:41 manu Exp $ */
 
 /*
  * Copyright (c) 2004 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: conf.c,v 1.67 2010/04/17 09:04:47 manu Exp $");
+__RCSID("$Id: conf.c,v 1.68 2010/04/18 03:55:41 manu Exp $");
 #endif
 #endif
 
@@ -87,6 +87,7 @@ __RCSID("$Id: conf.c,v 1.67 2010/04/17 09:04:47 manu Exp $");
 #include "dump.h"
 #include "list.h"
 #include "macro.h"
+#include "ratelimit.h"
 #include "milter-greylist.h"
 
 #ifdef USE_DMALLOC
@@ -202,6 +203,7 @@ conf_load_internal(timestamp)
 #endif
 		all_list_clear();
 		macro_clear();
+		ratelimit_clear();
 		acl_clear();
 
 		conf_in = stream;

@@ -1,4 +1,4 @@
-/* $Id: ratelimit.c,v 1.2 2010/04/18 04:03:56 manu Exp $ */
+/* $Id: ratelimit.c,v 1.3 2010/04/18 16:18:27 manu Exp $ */
 
 /*
  * Copyright (c) 2010 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: ratelimit.c,v 1.2 2010/04/18 04:03:56 manu Exp $");
+__RCSID("$Id: ratelimit.c,v 1.3 2010/04/18 16:18:27 manu Exp $");
 #endif
 #endif
 
@@ -66,6 +66,7 @@ __RCSID("$Id: ratelimit.c,v 1.2 2010/04/18 04:03:56 manu Exp $");
 #include "sync.h"
 #include "dump.h"
 #include "conf.h"
+#include "spf.h"
 #include "acl.h"
 #include "ratelimit.h"
 #include "milter-greylist.h"

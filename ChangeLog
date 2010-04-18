@@ -1,4 +1,5 @@
 4.3.7
+	Build fix when SPF is enabled
 	Ratelimit on SMTP sessions and data size
 	Fix missing ratelimit initialization 
 	Test for legacy config file timestamp so that it does not loop reloading

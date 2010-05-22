@@ -1,3 +1,5 @@
+4.3.8
+	Add a missing comma in X-Greylist (Kouhei Sutou)
 4.3.7
 	Build fix when SPF is enabled
 	Ratelimit on SMTP sessions and data size

@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.230 2010/04/18 04:03:56 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.231 2010/05/22 19:27:00 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.230 2010/04/18 04:03:56 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.231 2010/05/22 19:27:00 manu Exp $");
 #endif
 #endif
 
@@ -1242,6 +1242,8 @@ passed:
 			/* Silently ignore other codes, just report ACL */	
 			if (priv->priv_last_whitelist != 0) {
 				priv->priv_last_whitelist = 0;
+				if (whystr[0] != '\0')
+					mystrlcat (whystr, ", ", HDRLEN);
 				mystrlcat (whystr, "ACL %a matched", HDRLEN);
 			}
 

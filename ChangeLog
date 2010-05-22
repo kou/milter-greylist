@@ -1,5 +1,6 @@
 4.3.8
 	Add a missing comma in X-Greylist (Kouhei Sutou)
+	Look for liresolv in ${libdir} instead of /usr/lib (DUFRESNE VINCENT)
 4.3.7
 	Build fix when SPF is enabled
 	Ratelimit on SMTP sessions and data size

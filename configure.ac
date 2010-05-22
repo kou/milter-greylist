@@ -1,4 +1,4 @@
-# $Id: configure.ac,v 1.255 2010/04/18 16:21:22 manu Exp $
+# $Id: configure.ac,v 1.256 2010/05/22 19:30:16 manu Exp $
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
@@ -763,8 +763,8 @@ AC_ARG_ENABLE(dnsrbl,
 			], [ int result = ns_initparse(NULL, 0, NULL); ],
 			[],[ AC_CHECK_LIB([resolv], [ns_initparse],
 			    [LIBS="$LIBS -lresolv"], [
-				if test -r /usr/lib/libresolv.a; then
-					LIBS="$LIBS /usr/lib/libresolv.a"
+				if test -r ${libdir}/libresolv.a; then
+					LIBS="$LIBS ${libdir}/libresolv.a"
 				else
 					AC_MSG_WARN([ns_initparse not found])
 				fi
@@ -791,8 +791,8 @@ AC_ARG_ENABLE(mx,
                         ], [ int result = ns_initparse(NULL, 0, NULL); ],
                         [],[ AC_CHECK_LIB([resolv], [ns_initparse],
                             [LIBS="$LIBS -lresolv"], [
-                                if test -r /usr/lib/libresolv.a; then
-                                        LIBS="$LIBS /usr/lib/libresolv.a"
+                                if test -r ${libdir}/libresolv.a; then
+                                        LIBS="$LIBS ${libdir}/libresolv.a"
                                 else
                                         AC_MSG_WARN([ns_initparse not found])
                                 fi

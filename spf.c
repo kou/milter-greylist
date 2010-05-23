@@ -1,4 +1,4 @@
-/* $Id: spf.c,v 1.31 2008/07/31 10:56:40 manu Exp $ */
+/* $Id: spf.c,v 1.32 2010/05/23 08:59:03 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: spf.c,v 1.31 2008/07/31 10:56:40 manu Exp $");
+__RCSID("$Id: spf.c,v 1.32 2010/05/23 08:59:03 manu Exp $");
 #endif
 #endif
 
@@ -493,11 +493,13 @@ acl_add_spf(ad, data)
 	acl_data_t *ad;
 	void *data;
 {
-#ifdef USE_POSTFIX
-	mg_log(LOG_ERR, "spf self clause is broken on Postfix");
-	exit(EX_DATAERR);
-#endif
 	ad->spf_status = *(enum spf_status *)data;
+#ifdef USE_POSTFIX
+	if (ad->spf_status == MGSPF_SELF) {
+		mg_log(LOG_ERR, "spf self clause is broken on Postfix");
+		exit(EX_DATAERR);
+	}
+#endif
 	return;
 }
 

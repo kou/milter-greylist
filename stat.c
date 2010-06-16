@@ -1,7 +1,7 @@
-/* $Id: stat.c,v 1.5 2007/10/05 23:12:47 manu Exp $ */
+/* $Id: stat.c,v 1.6 2010/06/16 01:30:30 manu Exp $ */
 
 /*
- * Copyright (c) 2007 Emmanuel Dreyfus
+ * Copyright (c) 2007-2010 Emmanuel Dreyfus
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: stat.c,v 1.5 2007/10/05 23:12:47 manu Exp $");
+__RCSID("$Id: stat.c,v 1.6 2010/06/16 01:30:30 manu Exp $");
 #endif
 #endif
 
@@ -125,6 +125,8 @@ mg_stat_def(output, fstring)
 		    (errno == 0) ? "out of stdio streams" : strerror(errno));
 		return;
 	}
+
+	SET_CLOEXEC(outfp);
 
 	if ((format = fstring_escape(strdup(fstring))) == NULL) {
 		mg_log(LOG_ERR, "strdup failed: %s", strerror(errno));

@@ -1,7 +1,7 @@
-/* $Id: conf.c,v 1.68 2010/04/18 03:55:41 manu Exp $ */
+/* $Id: conf.c,v 1.69 2010/06/16 01:30:30 manu Exp $ */
 
 /*
- * Copyright (c) 2004 Emmanuel Dreyfus
+ * Copyright (c) 2004-2010 Emmanuel Dreyfus
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: conf.c,v 1.68 2010/04/18 03:55:41 manu Exp $");
+__RCSID("$Id: conf.c,v 1.69 2010/06/16 01:30:30 manu Exp $");
 #endif
 #endif
 
@@ -185,6 +185,7 @@ conf_load_internal(timestamp)
 		if (conf_cold)
 			exit(EX_OSERR);
 	} else {
+		SET_CLOEXEC(stream);
 		TSS_SET(conf_key, newconf);
 
 		peer_clear();

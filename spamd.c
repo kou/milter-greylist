@@ -1,7 +1,7 @@
-/* $Id: spamd.c,v 1.11 2009/05/13 02:50:58 manu Exp $ */
+/* $Id: spamd.c,v 1.12 2010/06/16 01:30:30 manu Exp $ */
 
 /*
- * Copyright (c) 2008 Manuel Badzong, Emmanuel Dreyfus
+ * Copyright (c) 2008-2010 Manuel Badzong, Emmanuel Dreyfus
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: spamd.c,v 1.11 2009/05/13 02:50:58 manu Exp $");
+__RCSID("$Id: spamd.c,v 1.12 2010/06/16 01:30:30 manu Exp $");
 #endif
 #endif
 
@@ -446,6 +446,8 @@ spamd_unix_socket(path)
 		return -1;
 	}
 
+	SET_CLOEXEC(sock);
+
 	if (connect(sock, (struct sockaddr*) &sun, sizeof(sun))) {
 		mg_log(LOG_ERR, "spamd connect failed: %s", strerror(errno));
 		return -1;
@@ -483,6 +485,8 @@ spamd_inet_socket(host, port)
 			      res->ai_protocol);
 		if (sock == -1)
 			continue;
+
+		SET_CLOEXEC(sock);
 
 		if (connect(sock, res->ai_addr, res->ai_addrlen) == 0)
 			break;

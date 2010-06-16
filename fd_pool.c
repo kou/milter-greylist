@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007 Johann Klasek
+ * Copyright (c) 2007-2010 Johann Klasek
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -122,6 +122,9 @@ int fd_new_desc() {
                         strerror(errno));
                 return -1;
         }
+
+	SET_CLOEXEC(descriptor);
+
 	return descriptor;
 }
 
@@ -340,6 +343,8 @@ FILE *fopen_ext(char *path, char *mode) {
 	err = errno;
 
 	if (stream != NULL) {
+		SET_CLOEXEC(stream);
+
 		if ( descriptor == fileno(stream) ) {
 			/* we are in luck, fopen has successfully aquired our low descriptor ... */
 			return stream;

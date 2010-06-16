@@ -1,7 +1,7 @@
-/* $Id: milter-greylist.h,v 1.80 2009/11/01 02:03:33 manu Exp $ */
+/* $Id: milter-greylist.h,v 1.81 2010/06/16 01:30:30 manu Exp $ */
 
 /*
- * Copyright (c) 2004-2007 Emmanuel Dreyfus
+ * Copyright (c) 2004-2010 Emmanuel Dreyfus
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -370,5 +370,21 @@ size_t mystrlcat(char *, const char *src, size_t size);
  */
 /* #define WORKAROUND_LIBMILTER_RACE_CONDITION */
 
-#endif /* _MILTER_GREYLIST_H_ */
+/*
+ * We may want to check SOCK_CLOEXEC as well for close-on-exec
+ * availlability for sockets. On the other hand, if the 
+ * functionnality is not there, fcntl(F_SETFD) will just 
+ * silently fail.
+ */
+#ifdef FD_CLOEXEC
+#define SET_CLOEXEC(fd)  do {			   		\
+	int flags = fcntl((fd), F_GETFD, 0);		    	\
+								\
+	if (flags != -1)					\
+		(void)fcntl(fd, F_SETFD, flags|FD_CLOEXEC);	\
+} while (0 /* CONSTCOND */)
+#else /* FD_CLOEXEC */
+#define SET_CLOEXEC(fd)
+#endif /* FD_CLOEXEC */
 
+#endif /* _MILTER_GREYLIST_H_ */

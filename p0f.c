@@ -1,7 +1,7 @@
-/* $Id: p0f.c,v 1.11 2010/04/06 17:01:59 manu Exp $ */
+/* $Id: p0f.c,v 1.12 2010/06/16 01:30:30 manu Exp $ */
 
 /*
- * Copyright (c) 2008 Emmanuel Dreyfus
+ * Copyright (c) 2008-2010 Emmanuel Dreyfus
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: p0f.c,v 1.11 2010/04/06 17:01:59 manu Exp $");
+__RCSID("$Id: p0f.c,v 1.12 2010/06/16 01:30:30 manu Exp $");
 #endif
 #endif
 #include <sys/types.h>
@@ -277,6 +277,8 @@ p0f_connect(void)
 		mg_log(LOG_ERR, "p0f socket not initialized");
 		exit(EX_SOFTWARE);
 	}
+
+	SET_CLOEXEC(p0fsock);
 
 	if (conf.c_debug)
 		mg_log(LOG_DEBUG, "using p0f socket \"%s\"", conf.c_p0fsock);		

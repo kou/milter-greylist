@@ -1,7 +1,7 @@
-/* $Id: sync.c,v 1.88 2009/10/31 21:28:03 manu Exp $ */
+/* $Id: sync.c,v 1.89 2010/06/16 01:30:30 manu Exp $ */
 
 /*
- * Copyright (c) 2004-2007 Emmanuel Dreyfus
+ * Copyright (c) 2004-2010 Emmanuel Dreyfus
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: sync.c,v 1.88 2009/10/31 21:28:03 manu Exp $");
+__RCSID("$Id: sync.c,v 1.89 2010/06/16 01:30:30 manu Exp $");
 #endif
 #endif
 
@@ -455,7 +455,7 @@ peer_connect(peer)	/* peer list is read-locked */
 	}
 
 	for (res = res0; res; res = res->ai_next) {
-		/*We only test an address family which kernel supports. */
+		/* We only test an address family which kernel supports. */
 		s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 		if (s == -1)
 			continue;
@@ -472,6 +472,8 @@ peer_connect(peer)	/* peer list is read-locked */
 		s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 		if (s == -1)
 			continue;
+
+		SET_CLOEXEC(s);
 
 		switch (res->ai_family) {
 		case AF_INET:
@@ -554,6 +556,8 @@ peer_connect(peer)	/* peer list is read-locked */
 		    peer->p_name, strerror(errno), peer->p_qlen);
 		return -1;
 	}
+
+	SET_CLOEXEC(s);
 
 	laddrlen = sizeof(laddr);
 	if (ipfromstring(laddrstr, SA(&laddr), &laddrlen,
@@ -956,6 +960,8 @@ sync_listen(addr, port, sms)
 		sms->runs = SMS_DISABLED;
 		return;
 	}
+
+	SET_CLOEXEC(s);
 
 	optval = 1;
 	if ((setsockopt(s, SOL_SOCKET, SO_REUSEADDR,
@@ -1520,6 +1526,8 @@ local_addr(sa, salen)
 		    strerror(errno));
 		return -1;
 	}
+
+	SET_CLOEXEC(sfd);
 
 	errno = 0;	 /* Solaris' bind() does not set errno... */
 	if (bind(sfd, sa, salen) == -1) {

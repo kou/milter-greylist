@@ -1,4 +1,4 @@
-/* $Id: spamd.c,v 1.12 2010/06/16 01:30:30 manu Exp $ */
+/* $Id: spamd.c,v 1.13 2010/06/16 01:33:43 manu Exp $ */
 
 /*
  * Copyright (c) 2008-2010 Manuel Badzong, Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: spamd.c,v 1.12 2010/06/16 01:30:30 manu Exp $");
+__RCSID("$Id: spamd.c,v 1.13 2010/06/16 01:33:43 manu Exp $");
 #endif
 #endif
 
@@ -168,8 +168,11 @@ spamd_check(ad, stage, ap, priv)
 	spamd_rcvhdr(priv, rcvhdr, SPAMD_BUFLEN);
 
 	snprintf(buffer, SPAMD_BUFLEN,
-	  "CHECK SPAMC/1.2\r\nContent-length: %d\r\n\r\n",
-	  (unsigned int)(priv->priv_msgcount + strlen(rcvhdr)));
+	  "CHECK SPAMC/1.2\r\n"
+	  "Content-length: %d\r\n"
+	  "User: %s\r\n\r\n",
+	  (unsigned int)(priv->priv_msgcount + strlen(rcvhdr)),
+	   priv->priv_queueid);
 
 	if ((sock = spamd_socket(conf.c_spamdsocktype, 
 				 conf.c_spamdsock)) == -1)

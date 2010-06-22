@@ -1,5 +1,4 @@
 4.3.8
-	Avoid spamd hang on malformed messages (Enrico Scholz)
 	Send the queueid to spamd (Petar Bogdanovic)
 	Close-on-exec sockets to avoid file shortage with stat (Enrico Scholz)
 	Add a missing comma in X-Greylist (Kouhei Sutou)

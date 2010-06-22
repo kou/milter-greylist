@@ -1,4 +1,4 @@
-/* $Id: spamd.c,v 1.14 2010/06/21 20:20:19 manu Exp $ */
+/* $Id: spamd.c,v 1.15 2010/06/22 02:13:04 manu Exp $ */
 
 /*
  * Copyright (c) 2008-2010 Manuel Badzong, Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: spamd.c,v 1.14 2010/06/21 20:20:19 manu Exp $");
+__RCSID("$Id: spamd.c,v 1.15 2010/06/22 02:13:04 manu Exp $");
 #endif
 #endif
 
@@ -189,11 +189,11 @@ spamd_check(ad, stage, ap, priv)
 			return -1;
 
 	TAILQ_FOREACH(h, &priv->priv_header, h_list)
-		if (spamd_write(sock, h->h_line, h->h_len) == -1)
+		if (spamd_write(sock, h->h_line, strlen(h->h_line)) == -1)
 			return -1;
 			
 	TAILQ_FOREACH(b, &priv->priv_body, b_list)
-		if (spamd_write(sock, b->b_lines, b->b_len) == -1)
+		if (spamd_write(sock, b->b_lines, strlen(b->b_lines)) == -1)
 			return -1;
 
 	if (spamd_read(sock, buffer, SPAMD_BUFLEN) == -1)

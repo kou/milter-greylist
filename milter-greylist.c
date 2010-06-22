@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.232 2010/06/21 20:20:19 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.233 2010/06/22 02:13:04 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.232 2010/06/21 20:20:19 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.233 2010/06/22 02:13:04 manu Exp $");
 #endif
 #endif
 
@@ -832,7 +832,6 @@ real_header(ctx, name, value)
 	strcat(h->h_line, sep);
 	strcat(h->h_line, value);
 	strcat(h->h_line, crlf);
-	h->h_len = len;
 
 	TAILQ_INSERT_TAIL(&priv->priv_header, h, h_list);
 
@@ -913,7 +912,6 @@ real_body(ctx, chunk, size)
 			exit(EX_OSERR);
 		}
 
-		b->b_len = strlen(crlf);
 		TAILQ_INSERT_TAIL(&priv->priv_body, b, b_list);
 
 		priv->priv_msgcount += strlen(crlf);
@@ -947,7 +945,6 @@ real_body(ctx, chunk, size)
 
 		memcpy(b->b_lines + priv->priv_buflen, chunk, i);
 		b->b_lines[linelen] = '\0';
-		b->b_len = linelen;
 		priv->priv_buflen = 0;
 
 		TAILQ_INSERT_TAIL(&priv->priv_body, b, b_list);
@@ -1005,7 +1002,6 @@ real_eom(ctx)
 		}
 
 		b->b_lines = priv->priv_buf;
-		b->b_len = priv->priv_buflen - 1;
 		b->b_lines[priv->priv_buflen - 1] = '\0';
 
 		priv->priv_buf = NULL;

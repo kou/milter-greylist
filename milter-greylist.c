@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.233 2010/06/22 02:13:04 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.234 2010/07/12 01:35:24 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.233 2010/06/22 02:13:04 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.234 2010/07/12 01:35:24 manu Exp $");
 #endif
 #endif
 
@@ -2650,6 +2650,22 @@ fstring_expand(priv, rcpt, fstring)
 				  dnsrbl_dump_matches(priv, dnsrbl, QSTRLEN),
 				  &outmaxlen);
 #endif
+			break;
+		}
+
+		case 'H': { /* SpamAssassin information */
+#ifdef USE_SPAMD
+			fstr_len = 2;
+			switch(*(ptok + 1)) {
+			case 's': { /* score */
+				char buf[QSTRLEN + 1];
+				(void)snprintf(buf, sizeof(buf), "%g",
+				    (double)priv->priv_spamd_score10/10);
+				mystrncat(&outstr, buf, &outmaxlen);
+				break;
+				}
+			}
+#endif /* USE_SPAMD */
 			break;
 		}
 

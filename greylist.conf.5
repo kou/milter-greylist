@@ -1,5 +1,5 @@
 .\"
-.\" $Id: greylist.conf.5,v 1.103 2010/04/18 04:03:56 manu Exp $
+.\" $Id: greylist.conf.5,v 1.104 2010/07/12 01:35:24 manu Exp $
 .\"
 .\" Copyright (c) 2004-2010 Emmanuel Dreyfus
 .\" All rights reserved.
@@ -1258,6 +1258,9 @@ seconds remaining (modulo one minute)
 .TP
 .I %R
 shortcut to %Rh:%Rm:Rs
+.TP
+.I %Hs
+SpamAssassin score (if build with SpamAssassin support)
 .TP
 .I %%
 a single % character

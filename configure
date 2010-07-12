@@ -6928,7 +6928,7 @@ if test "${enable_dnsrbl+set}" = set; then :
 		CFLAGS=
 		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <stdio.h>
+#include <arpa/inet.h>
 		             #include <arpa/nameser.h>
 
 int

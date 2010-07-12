@@ -1,4 +1,4 @@
-# $Id: configure.ac,v 1.256 2010/05/22 19:30:16 manu Exp $
+# $Id: configure.ac,v 1.257 2010/07/12 01:20:33 manu Exp $
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
@@ -758,7 +758,7 @@ AC_ARG_ENABLE(dnsrbl,
 		SAVEDCFLAGS=$CFLAGS" -DUSE_DNSRBL"
 		# For Debian
 		CFLAGS=
-		AC_TRY_LINK([#include <stdio.h>
+		AC_TRY_LINK([#include <arpa/inet.h>
 		             #include <arpa/nameser.h>
 			], [ int result = ns_initparse(NULL, 0, NULL); ],
 			[],[ AC_CHECK_LIB([resolv], [ns_initparse],

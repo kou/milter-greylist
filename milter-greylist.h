@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.h,v 1.83 2010/06/22 02:13:04 manu Exp $ */
+/* $Id: milter-greylist.h,v 1.84 2010/07/12 01:38:14 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2010 Emmanuel Dreyfus
@@ -180,11 +180,13 @@ struct rcpt {
 
 struct header {
 	char *h_line;
+	size_t h_len;
 	TAILQ_ENTRY(header) h_list;
 };
 
 struct body {
 	char *b_lines;
+	size_t b_len;
 	TAILQ_ENTRY(body) b_list;
 };
 

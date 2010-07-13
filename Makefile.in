@@ -1,4 +1,4 @@
-# $Id: Makefile.in,v 1.68 2010/04/12 12:04:41 manu Exp $
+# $Id: Makefile.in,v 1.69 2010/07/13 04:18:06 manu Exp $
 
 #
 # Copyright (c) 2004 Emmanuel Dreyfus
@@ -33,6 +33,7 @@ CFLAGS= 	@CFLAGS@ -D_BSD_SOURCE -I${SRCDIR} -I. @CPPFLAGS@
 LDFLAGS=	@LDFLAGS@
 LIBS= 		@LIBS@
 prefix=		@prefix@
+datarootdir=	@datarootdir@
 exec_prefix=	@exec_prefix@
 SYSCONFDIR=	@sysconfdir@
 LOCALSTATEDIR=	@localstatedir@

@@ -1,3 +1,5 @@
+4.3.9
+	Fix autoconf warning about --datarootdir (R P Herrold)
 4.3.8
 	Fix spamd hang if message contains NULL (Enrico Scholz)
 	Format string for SpamAssassin score

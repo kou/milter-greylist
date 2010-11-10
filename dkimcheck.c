@@ -1,4 +1,4 @@
-/* $Id: dkimcheck.c,v 1.4 2008/10/30 04:39:39 manu Exp $ */
+/* $Id: dkimcheck.c,v 1.5 2010/11/10 05:45:24 manu Exp $ */
 
 /*
  * Copyright (c) 2008 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: dkimcheck.c,v 1.4 2008/10/30 04:39:39 manu Exp $");
+__RCSID("$Id: dkimcheck.c,v 1.5 2010/11/10 05:45:24 manu Exp $");
 #endif
 #endif
 #include <ctype.h>
@@ -106,7 +106,7 @@ dkimcheck_error(priv)
 		break;
 	}
 
-	if (priv->priv_dkim != DKIM_STAT_OK) {
+	if (priv->priv_dkimstat != DKIM_STAT_OK) {
 		(void)dkim_free(priv->priv_dkim);
 		priv->priv_dkim = NULL;
 	}
@@ -176,7 +176,7 @@ dkimcheck_header(name, value, priv)
 		exit (EX_OSERR);
 	}
 
-	(void)snprintf((char *)header, len, "%s: %s", name, value);
+	(void)snprintf((char *)header, len + 1, "%s: %s", name, value);
 	priv->priv_dkimstat = dkim_header(priv->priv_dkim, header, len);
 
 	free(header);

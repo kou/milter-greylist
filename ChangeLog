@@ -1,6 +1,7 @@
 4.3.9
 	Fix autoconf warning about --datarootdir (R P Herrold)
 	Add spamassassin toggling to the .spec file (Adam Katz)
+	Fix DKIM (John Wood, Jörgen Lundman)
 4.3.8
 	Fix spamd hang if message contains NULL (Enrico Scholz)
 	Format string for SpamAssassin score

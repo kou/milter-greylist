@@ -1,4 +1,4 @@
-dnl $Id: milter-greylist.m4,v 1.3 2009/10/31 21:28:03 manu Exp $
+dnl $Id: milter-greylist.m4,v 1.4 2011/01/24 02:08:31 manu Exp $
 dnl Contributed by Ivan F. Martinez
 dnl
 dnl This file configure sendmail to use milter-greylist
@@ -31,11 +31,15 @@ dnl To get more information about milter parameters:
 dnl     http://www.sendmail.org/m4/adding_mailfilters.html
 dnl     http://www.milter.org/milter_api/installation.html
 dnl
-ifdef(`confGREYLIST_SOCKET',`dnl',`dnl
-define(`confGREYLIST_SOCKET',`local:/var/milter-greylist/milter-greylist.sock')dnl
+ifdef(`confGREYLIST_SOCKET',`dnl
+define(`confGREYLIST_ARGS',`S=confGREYLIST_SOCKET')dnl
+dnl',`dnl
+define(`confGREYLIST_ARGS',`S=local:/var/milter-greylist/milter-greylist.sock')dnl
 dnl')dnl
-ifdef(`confGREYLIST_OPTIONS',`dnl',`define(`confGREYLIST_OPTIONS',`')dnl')dnl
-INPUT_MAIL_FILTER(`greylist', `S=confGREYLIST_SOCKET, confGREYLIST_OPTIONS')dnl
+ifdef(`confGREYLIST_OPTIONS',`dnl
+define(`confGREYLIST_ARGS',confGREYLIST_ARGS`, confGREYLIST_OPTIONS')dnl
+dnl',`dnl')dnl
+INPUT_MAIL_FILTER(`greylist', `confGREYLIST_ARGS')dnl
 dnl debugmode(`V')dnl
 define(`xxquote',```$1''')dnl
 define(`xxconcat',`define(`$1', xxquote($1`$2')))')dnl

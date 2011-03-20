@@ -1,4 +1,4 @@
-/* $Id: p0f.c,v 1.12 2010/06/16 01:30:30 manu Exp $ */
+/* $Id: p0f.c,v 1.13 2011/03/20 09:15:31 manu Exp $ */
 
 /*
  * Copyright (c) 2008-2010 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: p0f.c,v 1.12 2010/06/16 01:30:30 manu Exp $");
+__RCSID("$Id: p0f.c,v 1.13 2011/03/20 09:15:31 manu Exp $");
 #endif
 #endif
 #include <sys/types.h>
@@ -181,9 +181,9 @@ p0f_lookup(priv)
 	req.id = tv.tv_usec;
 	req.type = QTYPE_FINGERPRINT;
 	req.src_ad = SADDR4(&priv->priv_addr)->s_addr;
-	req.src_port = htons(SA4(&priv->priv_addr)->sin_port);
+	req.src_port = ntohs(SA4(&priv->priv_addr)->sin_port);
 	req.dst_ad = inet_addr(daddr);
-	req.dst_port = htons(atoi(dport));
+	req.dst_port = atoi(dport);
 
 	if (conf.c_debug)
 		 mg_log(LOG_DEBUG, "p0f_lookup: %s[%d] -> %s[%d]",

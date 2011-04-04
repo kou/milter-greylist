@@ -1,4 +1,4 @@
-/* $Id: ratelimit.c,v 1.3 2010/04/18 16:18:27 manu Exp $ */
+/* $Id: ratelimit.c,v 1.4 2011/04/04 16:09:49 manu Exp $ */
 
 /*
  * Copyright (c) 2010 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: ratelimit.c,v 1.3 2010/04/18 16:18:27 manu Exp $");
+__RCSID("$Id: ratelimit.c,v 1.4 2011/04/04 16:09:49 manu Exp $");
 #endif
 #endif
 
@@ -270,12 +270,12 @@ ratelimit_validate(ad, stage, ap, priv)
 	mg_log(LOG_DEBUG, "index: old = %d, new = %d", old_index, new_index);
 #endif /* CONF_DEBUG */
 	if (old_index < new_index) {
-		for (i = old_index + 1; i < new_index; i++) 
+		for (i = old_index + 1; i <= new_index; i++) 
 			ra->ra_samples[i] = 0;
-	} else {
+	} else if (old_index > new_index) {
 		for (i = old_index + 1; i < RATELIMIT_SAMPLES; i++) 
 			ra->ra_samples[i] = 0;
-		for (i = 0; i < new_index; i++) 
+		for (i = 0; i <= new_index; i++) 
 			ra->ra_samples[i] = 0;
 	}
 

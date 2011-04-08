@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.235 2010/07/12 01:38:14 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.236 2011/04/08 16:21:18 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.235 2010/07/12 01:38:14 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.236 2011/04/08 16:21:18 manu Exp $");
 #endif
 #endif
 
@@ -951,8 +951,6 @@ real_body(ctx, chunk, size)
 		priv->priv_buflen = 0;
 
 		TAILQ_INSERT_TAIL(&priv->priv_body, b, b_list);
-
-		priv->priv_msgcount += linelen;
 	}
 
 	if(i < size) { /* keep the remains for later */

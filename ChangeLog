@@ -1,4 +1,5 @@
 4.3.9
+	Fix wrong message size tracking, causing bug in spamd (Attila Bruncsak)
 	Fix ratelimit sliding window for computing average
 	Fix p0f port byte order (Enrico Scholz)
 	Fix milter-greylist.m4 for newer Sendmail (Joe Pruett)

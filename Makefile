@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.133 2010/07/12 04:19:59 manu Exp $
+# $Id: Makefile,v 1.134 2011/04/13 01:41:45 manu Exp $
 
 #
 # Copyright (c) 2004 Emmanuel Dreyfus
@@ -33,13 +33,14 @@ CFLAGS= 	-g -O2 -Wall -I/usr/pkg/include -DHAVE_DATA_CALLBACK -DCONFFILE=\"${CON
 LDFLAGS=	 -L/usr/pkg/lib -Wl,--rpath=/usr/pkg/lib
 LIBS= 		 -lpthread -lresolv -lmilter
 prefix=		/usr/local
+datarootdir=	${prefix}/share
 exec_prefix=	${prefix}
 SYSCONFDIR=	${prefix}/etc
 LOCALSTATEDIR=	${prefix}/var
 SRCDIR=		.
 BINDIR=		${exec_prefix}/bin
 SBINDIR=        ${exec_prefix}/sbin
-MANDIR=		${prefix}/share/man
+MANDIR=		${datarootdir}/man
 USER=		root
 CONFFILE=       ${SYSCONFDIR}/mail/greylist.conf
 DUMPFILE=       ${LOCALSTATEDIR}/milter-greylist/greylist.db

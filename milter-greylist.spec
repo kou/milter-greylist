@@ -1,7 +1,7 @@
-# $Id: milter-greylist.spec,v 1.117 2010/08/24 06:46:49 manu Exp $
+# $Id: milter-greylist.spec,v 1.118 2011/04/13 01:41:45 manu Exp $
 # Contributed by Ivan F. Martinez
 
-%define ver 4.3.8
+%define ver 4.3.9
 %define rel 1
 
 %define user root
@@ -27,9 +27,6 @@
 
 %define p0f 0
 %{?build_p0f:%define p0f 1}
-
-%define spamassassin 0
-%{?build_spamassassin:%define spamassassin 1}
 
 %if ! %{postfix}
 Summary: GreyList milter for Sendmail
@@ -98,9 +95,6 @@ before the second attempt.
 %endif
 %if %{p0f}
 	--enable-p0f \
-%endif
-%if %{spamassassin}
-       --enable-spamassassin \
 %endif
 %if %{libbind}
 	--with-libbind \

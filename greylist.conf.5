@@ -1,5 +1,5 @@
 .\"
-.\" $Id: greylist.conf.5,v 1.104 2010/07/12 01:35:24 manu Exp $
+.\" $Id: greylist.conf.5,v 1.105 2011/04/25 07:55:47 manu Exp $
 .\"
 .\" Copyright (c) 2004-2010 Emmanuel Dreyfus
 .\" All rights reserved.
@@ -98,7 +98,7 @@ netmask. Here is an example:
   racl whitelist addr 192.168.3.0/24
   racl whitelist addr ::1
 .IP
-If the netmask is ommitted, /32 is assumed for an IPv4 address and
+If the netmask is omitted, /32 is assumed for an IPv4 address and
 /128 is assumed for an IPv6 address.
 .IP
 You should at least whitelist localhost (127.0.0.1/8), and if you have
@@ -178,7 +178,7 @@ was built with p0f support.
 clauses can be used with a quoted string for case-insensitive substring
 match, or against regular expressions. The
 .I p0fsock
-statement can be used to speficy the location of the p0f socket.
+statement can be used to specify the location of the p0f socket.
 .TP
 .I auth
 This is used to select a user that succeeded SMTP AUTH. In order to select
@@ -303,9 +303,9 @@ entry. Example:
 If a message matches the rule, any entry in the greylist or autowhite
 databases matching the sender IP is removed. Used with a DNSRBL blacklist
 ACL, it is useful for freeing the database from entries set up by a 
-machine which is known to be a spamer. Example:
+machine which is known to be a spammer. Example:
 .IP
-  racl blacklist dnsrbl "known-spamers" flushaddr
+  racl blacklist dnsrbl "known-spammer" flushaddr
 .TP
 .I nolog
 Do not generate syslog message if this rule matches. Example:
@@ -395,7 +395,7 @@ also possible to have ACL evaluated at the DATA stage of the SMTP transaction,
 using the 
 .I dacl 
 keyword, provided the message went through RCPT-stage ACL, and possibly
-greylisting. Note that you canot use the
+greylisting. Note that you cannot use the
 .I greylist
 action at DATA-stage if the RCPT-stage ACL that matched had a 
 .I greylist
@@ -451,7 +451,7 @@ Example 2:
 .PP
 Note that if there are multiple recipient, a
 .I rcpt
-clause at DATA stage evalutes to true if it matches any of them.
+clause at DATA stage evaluates to true if it matches any of them.
 If you want to match an exact set of recipients, you can use multiple 
 .I rcpt
 clauses along with a
@@ -546,8 +546,8 @@ Using '*' as the address means to bind to all local interfaces' addresses.
 Note that if you are not using the default port, all MXs must use the same 
 port number. 
 .PP
-For outbound connections the system is selecting one of the possible adresses.
-If you want to use a specific ip you can use:
+For outbound connections the system is selecting one of the possible addresses.
+If you want to use a specific IP you can use:
 .PP
   syncsrcaddr 123.456.78.9
 .PP
@@ -577,7 +577,7 @@ of humanly readable timestamp which by default appears as a comment at
 the end of each line in the dumpfile. You may disable generation of
 this comment by specifying
 .I dump_no_time_translation
-option in the configuration file. This is specifficaly recommended if
+option in the configuration file. This is specifically recommended if
 your dumpfile grows to 100's of megabytes - it can reduce the time
 needed for the dump operation by the order of magnitude!
 .SH REPORTING
@@ -689,8 +689,8 @@ example:
 The trailing 5 at the end of the
 .I urlcheck
 definition is the maximum number of simultaneous connections we want to 
-launch on this URL. For each message, the URL will be querried, with  % format 
-tags being subtituted. For instance,
+launch on this URL. For each message, the URL will be queried, with  % format 
+tags being substituted. For instance,
 .I %r
 is substituted by the recipient. See the 
 .B FORMAT STRINGS
@@ -1083,7 +1083,7 @@ match on subdomain boundaries instead of the default suffix matching.
 E.g. if
 .I domainexact
 is not enabled (the default) then gle.com will match google.com in 
-addtion to gle.com. If 
+addition to gle.com. If 
 .I domainexact
 is enabled then, domain names will match on subdomain boundaries (e.g.  gle.com will
 match mail.gle.com and gle.com but not google.com)
@@ -1100,7 +1100,7 @@ Disable DRAC.
 .I logexpired
 This option causes greylist entries that expire to be logged via syslog.
 This allows you to easily collect the IP addresses and sender names and
-use them for blacklisting, SPAM scoring, etc.  Normally, expirations are
+use them for blacklisting, SPAM scoring, etc.  Normally, expiration's are
 only logged if the
 .B debug
 option is set, but that generates a lot of extra messages.
@@ -1185,9 +1185,9 @@ or
 .I %M{if_addr}
 .TP
 .I %g
-a regex backreference. For instance,
+a regex back reference. For instance,
 .I %g{\\\\2}
-is substituted by the string maching the second parenthesis group in all 
+is substituted by the string matching the second parenthesis group in all 
 ACL regex clauses
 .TP
 .I %T

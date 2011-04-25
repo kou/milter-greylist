@@ -1,5 +1,5 @@
 .\"
-.\" $Id: milter-greylist.8,v 1.44 2009/04/02 04:12:12 manu Exp $
+.\" $Id: milter-greylist.8,v 1.45 2011/04/25 07:55:47 manu Exp $
 .\"
 .\" Copyright (c) 2004-2009 Emmanuel Dreyfus
 .\" All rights reserved.
@@ -230,7 +230,7 @@ Enable test mode. This alters the meaning of
 .I rcpt
 lines in 
 .I greylist.conf\fR,
-so that only messages sent to recipient adresses listed there are 
+so that only messages sent to recipient addresses listed there are 
 selected for greylisting. This option and the 
 .I rcpt
 lines have been deprecated in favor of ACL, so do not use it. 
@@ -262,7 +262,7 @@ option in the configuration file.
 sets the minimum delay between the first attempt and the time
 the message can be accepted. Default is 30 minutes. 
 A suffix can be added to specify seconds (s), minutes (m), hours (h), 
-days (d) or weeks (w). Whithout any suffix, values are treated as seconds.
+days (d) or weeks (w). Without any suffix, values are treated as seconds.
 Equivalent to the
 .I greylist
 option in the configuration file.

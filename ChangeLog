@@ -1,3 +1,5 @@
+4.3.10
+	Typo fixes in man pages (Bernhard Schneider)
 4.3.9
 	Fix wrong message size tracking, causing bug in spamd (Attila Bruncsak)
 	Fix ratelimit sliding window for computing average

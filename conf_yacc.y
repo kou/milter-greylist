@@ -16,7 +16,7 @@
 %token LOGFAC_LOCAL5 LOGFAC_LOCAL6 LOGFAC_LOCAL7 P0F P0FSOCK DKIMCHECK
 %token SPAMDSOCK SPAMDSOCKT SPAMD DOMAINEXACT ADDHEADER NOLOG LDAPBINDDN 
 %token LDAPBINDPW TARPIT TARPIT_SCOPE SESSION COMMAND MX RATELIMIT KEY
-%token DOMATCH DATA
+%token DOMATCH DATA LOCALADDR
 
 %{
 #include "config.h"
@@ -24,7 +24,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: conf_yacc.y,v 1.111 2010/04/18 04:03:56 manu Exp $");
+__RCSID("$Id: conf_yacc.y,v 1.112 2011/08/17 01:06:50 manu Exp $");
 #endif
 #endif
 
@@ -165,6 +165,7 @@ lines	:	lines netblock '\n'
 	|	lines urlcheckdef '\n'
 	|	lines ldapcheckdef '\n'
 	|	lines ldapconfdef '\n'
+	|	lines localaddrdef '\n'
 	|	lines p0fsockdef '\n'
 	|	lines spamdsockdef '\n'
 	|	lines listdef '\n'
@@ -1620,7 +1621,20 @@ ldaptimeout:	GLTIMEOUT TDELAY {
 		}
 	|
 	;
-
+localaddrdef:	LOCALADDR IPADDR { 
+			(void)memcpy(&conf.c_localaddr, &$2, 
+				     sizeof(struct sockaddr_in));
+		}
+	|	LOCALADDR IP6ADDR {
+#ifdef AF_INET6
+			(void)memcpy(&conf.c_localaddr, &$2, 
+				     sizeof(struct sockaddr_in6));
+#else
+			mg_log(LOG_INFO, "IPv6 is not supported, "
+			     "ignore line %d", conf_line);
+#endif
+		}
+	;
 macrodef_regex:		SM_MACRO QSTRING QSTRING REGEX {
 				char name[QSTRLEN + 1];
 				char macro[QSTRLEN + 1];

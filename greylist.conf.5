@@ -1,5 +1,5 @@
 .\"
-.\" $Id: greylist.conf.5,v 1.105 2011/04/25 07:55:47 manu Exp $
+.\" $Id: greylist.conf.5,v 1.106 2011/08/17 01:06:50 manu Exp $
 .\"
 .\" Copyright (c) 2004-2010 Emmanuel Dreyfus
 .\" All rights reserved.
@@ -214,6 +214,13 @@ The first six values are plain SPF validation status. The
 value is a special test that checks the server's local IP address against the
 sender's SPF record. If that test validates, odds are good that the sender
 SPF record is wide open, and this is hint that SPF should not be trusted.
+.IP
+In order to use
+.I spf self\fR,
+Postfix users must specify the local address in the configuration file, 
+using the
+.I localaddr 
+option.
 .IP 
 Absence of any value after the 
 .I spf
@@ -1104,6 +1111,12 @@ use them for blacklisting, SPAM scoring, etc.  Normally, expiration's are
 only logged if the
 .B debug
 option is set, but that generates a lot of extra messages.
+.TP
+.I localaddr
+Specify the machine IP address, so that the
+.I spf self
+clause can use it when using Postfix. This is not useful when using 
+Sendmail, since it can be detected automatically.
 .PP
 The configuration file is reloaded automatically once it is modified when
 new e-mail arrives. Most configuration keywords will take effect

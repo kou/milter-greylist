@@ -1,4 +1,4 @@
-/* $Id: spf.c,v 1.32 2010/05/23 08:59:03 manu Exp $ */
+/* $Id: spf.c,v 1.33 2011/08/17 01:06:50 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: spf.c,v 1.32 2010/05/23 08:59:03 manu Exp $");
+__RCSID("$Id: spf.c,v 1.33 2011/08/17 01:06:50 manu Exp $");
 #endif
 #endif
 
@@ -494,12 +494,6 @@ acl_add_spf(ad, data)
 	void *data;
 {
 	ad->spf_status = *(enum spf_status *)data;
-#ifdef USE_POSTFIX
-	if (ad->spf_status == MGSPF_SELF) {
-		mg_log(LOG_ERR, "spf self clause is broken on Postfix");
-		exit(EX_DATAERR);
-	}
-#endif
 	return;
 }
 
@@ -552,47 +546,65 @@ spf_check_self(ad, as, ap, priv)
 	struct mlfi_priv *priv;
 {
 	int retval = 0;
-#ifndef USE_POSTFIX
 	sockaddr_t saved_addr;
 	acl_data_t tmp_ad;
 	char *ip;
 
-	memcpy(&saved_addr, &priv->priv_addr, sizeof(saved_addr));
+	(void)memcpy(&saved_addr, &priv->priv_addr, sizeof(saved_addr));
 
-	ip = local_ipstr(priv);
-	if (strncmp(ip, "IPv6:", strlen("IPv6:")) == 0) {
+	switch (conf.c_localaddr.ss_family) {
+	case AF_INET:
+		(void)memcpy(&priv->priv_addr, &conf.c_localaddr, 
+			     sizeof(struct sockaddr_in));
+		break;
 #ifdef AF_INET6
-		if (inet_pton(AF_INET6, ip + strlen("IPv6:"), 
-			    SADDR6(SA(&priv->priv_addr))) <= 0) {
-			mg_log(LOG_ERR, 
-			       "Invalid IPv6 local address %s", ip);
-			exit(EX_SOFTWARE);
-		}
-#else /* AF_INET6 */
-		mg_log(LOG_ERR, 
-		    "IPv6 support not compiled but local IP is IPv6");
-		exit(EX_SOFTWARE);
+	case AF_INET6:
+		(void)memcpy(&priv->priv_addr, &conf.c_localaddr, 
+			     sizeof(struct sockaddr_in6));
+		break;
 #endif /* AF_INET6 */
-	} else {
-		if (inet_pton(AF_INET, ip, 
-			    SADDR4(SA(&priv->priv_addr))) <= 0) {
+	default:
+#ifndef USE_POSTFIX
+		ip = local_ipstr(priv);
+		if (strncmp(ip, "IPv6:", strlen("IPv6:")) == 0) {
+#ifdef AF_INET6
+			if (inet_pton(AF_INET6, ip + strlen("IPv6:"), 
+				    SADDR6(SA(&priv->priv_addr))) <= 0) {
+				mg_log(LOG_ERR, 
+				       "Invalid IPv6 local address %s", ip);
+				exit(EX_SOFTWARE);
+			}
+#else /* AF_INET6 */
 			mg_log(LOG_ERR, 
-			       "Invalid IPv4 local address %s", ip);
+			    "IPv6 support not compiled but local IP is IPv6");
 			exit(EX_SOFTWARE);
+#endif /* AF_INET6 */
+		} else {
+			if (inet_pton(AF_INET, ip, 
+				    SADDR4(SA(&priv->priv_addr))) <= 0) {
+				mg_log(LOG_ERR, 
+				       "Invalid IPv4 local address %s", ip);
+				exit(EX_SOFTWARE);
+			}
 		}
+#else /* USE_POSTFIX */
+		mg_log(LOG_ERR, "spf self used without localaddr specified");
+		return 0;
+#endif /* USE_POSTFIX */
+		break;
 	}
 
 	if (ad == NULL)
-		memset(&tmp_ad, 0, sizeof(tmp_ad));
+		(void)memset(&tmp_ad, 0, sizeof(tmp_ad));
 	else
-		memcpy(&tmp_ad, ad, sizeof(tmp_ad));
+		(void)memcpy(&tmp_ad, ad, sizeof(tmp_ad));
 
 	tmp_ad.spf_status = MGSPF_PASS;
 
 	retval = spf_check_internal(&tmp_ad, as, ap, priv);
 
-	memcpy(&priv->priv_addr, &saved_addr, sizeof(saved_addr));
-#endif /* !USE_POSTFIX */
+	(void)memcpy(&priv->priv_addr, &saved_addr, sizeof(priv->priv_addr));
+
 	return retval;
 }
 

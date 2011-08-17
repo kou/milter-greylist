@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.236 2011/04/08 16:21:18 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.237 2011/08/17 01:06:50 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.236 2011/04/08 16:21:18 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.237 2011/08/17 01:06:50 manu Exp $");
 #endif
 #endif
 
@@ -3293,6 +3293,7 @@ fstring_escape(fstring)
 
 	return fstring;
 }
+
 
 #ifndef USE_POSTFIX
 char *

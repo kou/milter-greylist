@@ -28,6 +28,7 @@ msgsize		[Mm][Ss][Gg][Ss][Ii][Zz][Ee]
 rcptcount	[Rr][Cc][Pp][Tt][Cc][Oo][Uu][Nn][Tt]
 noaccessdb	[Nn][Oo][Aa][Cc][Cc][Ee][Ss][Ss][Dd][Bb]
 extendedregex	[Ee][Xx][Tt][Ee][Nn][Dd][Ee][Dd][Rr][Ee][Gg][Ee][Xx]
+localaddr	[Ll][Oo][Cc][Aa][ll][Aa][Dd][Dd][Rr]
 nospf		[Nn][Oo][Ss][Pp][Ff]
 spf		[Ss][Pp][Ff]
 dkimcheck	[Dd][Kk][Ii][Mm]
@@ -171,7 +172,7 @@ data		[Dd][Aa][Tt][Aa]
 	#ifndef HAVE_BROKEN_RCSID
 	#include <sys/cdefs.h>
 	#ifdef __RCSID
-	__RCSID("$Id: conf_lex.l,v 1.98 2010/04/18 04:03:56 manu Exp $");
+	__RCSID("$Id: conf_lex.l,v 1.99 2011/08/17 01:06:49 manu Exp $");
 	#endif
 	#endif
 	#endif
@@ -225,6 +226,7 @@ data		[Dd][Aa][Tt][Aa]
 {noaccessdb}	{ return NOACCESSDB; }
 {extendedregex}	{ return EXTENDEDREGEX; }
 {delayedreject}	{ return DELAYEDREJECT; }
+{localaddr}	{ return LOCALADDR; }
 {nospf}		{ return NOSPF; }
 {spf}		{ BEGIN(S_SPF); return SPF; }
 {dkimcheck}	{ BEGIN(S_DKIM); return DKIMCHECK; }

@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.237 2011/08/17 01:06:50 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.238 2011/10/06 17:20:45 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.237 2011/08/17 01:06:50 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.238 2011/10/06 17:20:45 manu Exp $");
 #endif
 #endif
 
@@ -521,6 +521,13 @@ real_envfrom(ctx, envfrom)
 	strncpy(priv->priv_from, idx, ADDRLEN);
 	priv->priv_from[ADDRLEN] = '\0';
 
+	/*
+	 * If we stripped bytes prior '=' then we
+	 * need to restore the leading '<'
+	 */
+	if (idx != tmpfrom)
+		priv->priv_from[0] = '<';
+	
 	/*
 	 * Is the sender non-IP?
 	 */

@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.238 2011/10/06 17:20:45 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.239 2012/02/18 05:14:25 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.238 2011/10/06 17:20:45 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.239 2012/02/18 05:14:25 manu Exp $");
 #endif
 #endif
 
@@ -452,8 +452,7 @@ real_envfrom(ctx, envfrom)
 	char *verify;
 	char *cert_subject;
 	struct rcpt *r;
-	struct header *h;
-	struct body *b;
+	struct line *l;
 
 	if ((priv = (struct mlfi_priv *) smfi_getpriv(ctx)) == NULL) {
 		mg_log(LOG_ERR, "Internal error: smfi_getpriv() returns NULL");
@@ -470,15 +469,15 @@ real_envfrom(ctx, envfrom)
 		LIST_REMOVE(r, r_list);
 		free(r);
 	}
-	while ((h = TAILQ_FIRST(&priv->priv_header)) != NULL) {
-		free(h->h_line);
-		TAILQ_REMOVE(&priv->priv_header, h,  h_list);
-		free(h);
+	while ((l = TAILQ_FIRST(&priv->priv_header)) != NULL) {
+		free(l->l_line);
+		TAILQ_REMOVE(&priv->priv_header, l, l_list);
+		free(l);
 	}
-	while ((b = TAILQ_FIRST(&priv->priv_body)) != NULL) {
-		free(b->b_lines);
-		TAILQ_REMOVE(&priv->priv_body, b, b_list);
-		free(b);
+	while ((l = TAILQ_FIRST(&priv->priv_body)) != NULL) {
+		free(l->l_line);
+		TAILQ_REMOVE(&priv->priv_body, l, l_list);
+		free(l);
 	}
 	if (priv->priv_buf)
 		free(priv->priv_buf);
@@ -802,7 +801,7 @@ real_header(ctx, name, value)
 	char *value;
 {
 	sfsistat stat;
-	struct header *h;
+	struct line *l;
 	struct mlfi_priv *priv;
 	const char sep[] = ": ";
 	const char crlf[] = "\r\n";
@@ -824,24 +823,24 @@ real_header(ctx, name, value)
 		return SMFIS_CONTINUE;
 	}
 
-	if ((h = malloc(sizeof(*h))) == NULL) {
+	if ((l = malloc(sizeof(*l))) == NULL) {
 		mg_log(LOG_ERR, "malloc() failed: %s", strerror(errno));
 		exit(EX_OSERR);
 	}
 
 	len = strlen(name) + strlen(sep) + strlen(value) + strlen(crlf);
-	if ((h->h_line = malloc(len + 1)) == NULL) {
+	if ((l->l_line = malloc(len + 1)) == NULL) {
 		mg_log(LOG_ERR, "malloc() failed: %s", strerror(errno));
 		exit(EX_OSERR);
 	}
-	h->h_line[0] = '\0';
-	strcat(h->h_line, name);
-	strcat(h->h_line, sep);
-	strcat(h->h_line, value);
-	strcat(h->h_line, crlf);
-	h->h_len = len;
+	l->l_line[0] = '\0';
+	strcat(l->l_line, name);
+	strcat(l->l_line, sep);
+	strcat(l->l_line, value);
+	strcat(l->l_line, crlf);
+	l->l_len = len;
 
-	TAILQ_INSERT_TAIL(&priv->priv_header, h, h_list);
+	TAILQ_INSERT_TAIL(&priv->priv_header, l, l_list);
 
 	stat = SMFIS_CONTINUE;
 
@@ -880,7 +879,7 @@ real_body(ctx, chunk, size)
 {
 	sfsistat stat;
 	struct mlfi_priv *priv;
-	struct body *b;
+	struct line *l;
 	size_t linelen;
 	int i;
 
@@ -910,18 +909,18 @@ real_body(ctx, chunk, size)
 	if (TAILQ_EMPTY(&priv->priv_body) && (priv->priv_buflen == 0)) {
 		const char crlf[] = "\r\n";
 
-		if ((b = malloc(sizeof(*b))) == NULL) {
+		if ((l = malloc(sizeof(*l))) == NULL) {
 			mg_log(LOG_ERR, "malloc() failed: %s", strerror(errno));
 			exit(EX_OSERR);
 		}
 
-		if ((b->b_lines = strdup(crlf)) == NULL) {
+		if ((l->l_line = strdup(crlf)) == NULL) {
 			mg_log(LOG_ERR, "strdup() failed: %s", strerror(errno));
 			exit(EX_OSERR);
 		}
 
-		b->b_len = strlen(crlf);
-		TAILQ_INSERT_TAIL(&priv->priv_body, b, b_list);
+		l->l_len = strlen(crlf);
+		TAILQ_INSERT_TAIL(&priv->priv_body, l, l_list);
 
 		priv->priv_msgcount += strlen(crlf);
 	}
@@ -933,31 +932,31 @@ real_body(ctx, chunk, size)
 	++i; /* Use i as byte counter */
 
 	if (chunk[i - 1] == '\n') { /* We have a newline */
-		if ((b = malloc(sizeof(*b))) == NULL) {
+		if ((l = malloc(sizeof(*l))) == NULL) {
 			mg_log(LOG_ERR, "malloc() failed: %s", strerror(errno));
 			exit(EX_OSERR);
 		}
 	
 		linelen = priv->priv_buflen + i;
 
-		if ((b->b_lines = malloc(linelen + 1)) == NULL) {
+		if ((l->l_line = malloc(linelen + 1)) == NULL) {
 			mg_log(LOG_ERR, "malloc() failed: %s", strerror(errno));
 			exit(EX_OSERR);
 		}
 
 		/* Gather data saved from a previous call */
 		if (priv->priv_buf) {
-			memcpy(b->b_lines, priv->priv_buf, priv->priv_buflen);
+			memcpy(l->l_line, priv->priv_buf, priv->priv_buflen);
 			free(priv->priv_buf);
 			priv->priv_buf = NULL;
 		}
 
-		memcpy(b->b_lines + priv->priv_buflen, chunk, i);
-		b->b_lines[linelen] = '\0';
-		b->b_len = linelen;
+		memcpy(l->l_line + priv->priv_buflen, chunk, i);
+		l->l_line[linelen] = '\0';
+		l->l_len = linelen;
 		priv->priv_buflen = 0;
 
-		TAILQ_INSERT_TAIL(&priv->priv_body, b, b_list);
+		TAILQ_INSERT_TAIL(&priv->priv_body, l, l_list);
 	}
 
 	if(i < size) { /* keep the remains for later */
@@ -1002,21 +1001,21 @@ real_eom(ctx)
 	 * save the remaining buffer
 	 */
 	if (priv->priv_buflen > 0) {
-		struct body *b;
+		struct line *l;
 
-		if ((b = malloc(sizeof(*b))) == NULL) {
+		if ((l = malloc(sizeof(*l))) == NULL) {
 			mg_log(LOG_ERR, "malloc() failed: %s", strerror(errno));
 			exit(EX_OSERR);
 		}
 
-		b->b_lines = priv->priv_buf;
-		b->b_len = priv->priv_buflen - 1;
-		b->b_lines[priv->priv_buflen - 1] = '\0';
+		l->l_line = priv->priv_buf;
+		l->l_len = priv->priv_buflen - 1;
+		l->l_line[priv->priv_buflen - 1] = '\0';
 
 		priv->priv_buf = NULL;
 		priv->priv_buflen = 0;
 
-		TAILQ_INSERT_TAIL(&priv->priv_body, b, b_list);
+		TAILQ_INSERT_TAIL(&priv->priv_body, l, l_list);
 	}
 
 	stat = SMFIS_CONTINUE;
@@ -1335,8 +1334,7 @@ real_close(ctx)
 {
 	struct mlfi_priv *priv;
 	struct rcpt *r;
-	struct header *h;
-	struct body *b;
+	struct line *l;
 
 	if ((priv = (struct mlfi_priv *) smfi_getpriv(ctx)) != NULL) {
 		smtp_reply_free(&priv->priv_sr);
@@ -1345,15 +1343,15 @@ real_close(ctx)
 			LIST_REMOVE(r, r_list);
 			free(r);
 		}
-		while ((h = TAILQ_FIRST(&priv->priv_header)) != NULL) {
-			free(h->h_line);
-			TAILQ_REMOVE(&priv->priv_header, h,  h_list);
-			free(h);
+		while ((l = TAILQ_FIRST(&priv->priv_header)) != NULL) {
+			free(l->l_line);
+			TAILQ_REMOVE(&priv->priv_header, l,  l_list);
+			free(l);
 		}
-		while ((b = TAILQ_FIRST(&priv->priv_body)) != NULL) {
-			free(b->b_lines);
-			TAILQ_REMOVE(&priv->priv_body, b, b_list);
-			free(b);
+		while ((l = TAILQ_FIRST(&priv->priv_body)) != NULL) {
+			free(l->l_line);
+			TAILQ_REMOVE(&priv->priv_body, l, l_list);
+			free(l);
 		}
 		if (priv->priv_buf)
 			free(priv->priv_buf);

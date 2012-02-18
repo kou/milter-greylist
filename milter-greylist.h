@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.h,v 1.84 2010/07/12 01:38:14 manu Exp $ */
+/* $Id: milter-greylist.h,v 1.85 2012/02/18 05:14:25 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2010 Emmanuel Dreyfus
@@ -178,17 +178,13 @@ struct rcpt {
 	LIST_ENTRY(rcpt) r_list;
 };
 
-struct header {
-	char *h_line;
-	size_t h_len;
-	TAILQ_ENTRY(header) h_list;
+struct line {
+	char *l_line;
+	size_t l_len;
+	TAILQ_ENTRY(line) l_list;
 };
 
-struct body {
-	char *b_lines;
-	size_t b_len;
-	TAILQ_ENTRY(body) b_list;
-};
+TAILQ_HEAD(bh_line, line);
 
 struct mlfi_priv {
 	SMFICTX *priv_ctx;
@@ -200,8 +196,8 @@ struct mlfi_priv {
 	LIST_HEAD(, rcpt) priv_rcpt;
 	char *priv_cur_rcpt;
 	int priv_rcptcount;
-	TAILQ_HEAD(, header) priv_header;
-	TAILQ_HEAD(, body) priv_body;
+	struct bh_line priv_header;
+	struct bh_line priv_body;
 #ifdef USE_GEOIP
 	const char *priv_ccode;
 #endif

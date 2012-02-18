@@ -24,7 +24,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: conf_yacc.y,v 1.112 2011/08/17 01:06:50 manu Exp $");
+__RCSID("$Id: conf_yacc.y,v 1.113 2012/02/18 05:14:24 manu Exp $");
 #endif
 #endif
 
@@ -919,6 +919,8 @@ acl_clause:	helo_clause
 	|	geoip_clause
 	|	prop_clause
 	|	propregex_clause
+	|	bodyprop_clause
+	|	headerprop_clause
 	|	spamd_clause
 	|	spamd_score_clause
 	|	tarpit_clause
@@ -1300,6 +1302,31 @@ prop_clause:		PROP QSTRING {
 			upd.upd_data = quotepath(qstring, $2, QSTRLEN);
 
 			acl_add_clause(AC_PROP, &upd);
+#else
+			acl_drop();
+			mg_log(LOG_INFO, 
+			    "no CURL or LDAP support not compiled in, "
+			    "ignore line %d", conf_line);
+#endif
+		}
+	;
+bodyprop_clause:	BODY PROP {
+#if defined(USE_CURL) || defined(USE_LDAP)
+			/* + 1 to strip leadin $ */
+			acl_add_clause(AC_BODY_PROP, $2 + 1);
+#else
+			acl_drop();
+			mg_log(LOG_INFO, 
+			    "no CURL or LDAP support not compiled in, "
+			    "ignore line %d", conf_line);
+#endif
+		}
+	;
+
+headerprop_clause:	GLHEADER PROP {
+#if defined(USE_CURL) || defined(USE_LDAP)
+			/* + 1 to strip leadin $ */
+			acl_add_clause(AC_HEADER_PROP, $2 + 1);
 #else
 			acl_drop();
 			mg_log(LOG_INFO, 

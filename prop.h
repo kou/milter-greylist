@@ -1,4 +1,4 @@
-/* $Id: prop.h,v 1.1 2008/08/03 09:48:44 manu Exp $ */
+/* $Id: prop.h,v 1.2 2012/02/18 05:14:25 manu Exp $ */
 
 /*
  * Copyright (c) 2008 Emmanuel Dreyfus
@@ -59,5 +59,9 @@ int prop_string_validate(acl_data_t *, acl_stage_t,
 			 struct acl_param *, struct mlfi_priv *); 
 int prop_regex_validate(acl_data_t *, acl_stage_t,
 			struct acl_param *, struct mlfi_priv *); 
+int prop_body_validate(acl_data_t *, acl_stage_t,
+		       struct acl_param *, struct mlfi_priv *); 
+int prop_header_validate(acl_data_t *, acl_stage_t,
+			 struct acl_param *, struct mlfi_priv *); 
 
 #endif /* _PROP_H_ */

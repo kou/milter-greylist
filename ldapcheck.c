@@ -1,4 +1,4 @@
-/* $Id: ldapcheck.c,v 1.9 2010/04/10 05:42:52 manu Exp $ */
+/* $Id: ldapcheck.c,v 1.10 2012/02/18 05:14:25 manu Exp $ */
 
 /*
  * Copyright (c) 2008 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: ldapcheck.c,v 1.9 2010/04/10 05:42:52 manu Exp $");
+__RCSID("$Id: ldapcheck.c,v 1.10 2012/02/18 05:14:25 manu Exp $");
 #endif
 #endif
 #include <ctype.h>
@@ -81,8 +81,10 @@ static inline void ldapcheck_unlock(struct ldapconf_entry *);
 static struct ldapcheck_list ldapcheck_list;
 static struct ldapconf_list ldapconf_list;
 static struct timeval ldap_timeout;
+#ifdef notyet
 static char *ldap_binddn;
 static char *ldap_bindpw;
+#endif
 
 int ldapcheck_gflags = 0;
 

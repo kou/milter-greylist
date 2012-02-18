@@ -1,4 +1,4 @@
-/* $Id: acl.h,v 1.44 2010/04/18 16:18:27 manu Exp $ */
+/* $Id: acl.h,v 1.45 2012/02/18 05:14:24 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -78,9 +78,11 @@ typedef enum {
 	AC_BODY,
 	AC_BODY_LIST,
 	AC_BODY_RE,
+	AC_BODY_PROP,
 	AC_HEADER,
 	AC_HEADER_LIST,
 	AC_HEADER_RE,
+	AC_HEADER_PROP,
 	AC_DNSRBL,
 	AC_DNSRBL_LIST,
 	AC_MX,
@@ -92,6 +94,7 @@ typedef enum {
 	AC_LDAPCHECK,
 	AC_PROP,
 	AC_PROP_RE,
+	AC_HEADERPROP,
 	AC_AUTH,
 	AC_AUTH_RE,
 	AC_AUTH_LIST,

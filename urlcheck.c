@@ -1,4 +1,4 @@
-/* $Id: urlcheck.c,v 1.35 2009/06/08 23:40:06 manu Exp $ */
+/* $Id: urlcheck.c,v 1.36 2012/02/18 05:14:25 manu Exp $ */
 
 /*
  * Copyright (c) 2006-2007 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: urlcheck.c,v 1.35 2009/06/08 23:40:06 manu Exp $");
+__RCSID("$Id: urlcheck.c,v 1.36 2012/02/18 05:14:25 manu Exp $");
 #endif
 #endif
 
@@ -77,8 +77,8 @@ struct urlcheck_data {
 #define BOUNDARY_LEN	4
 struct post_data {
 	struct mlfi_priv *pd_priv;
-	struct header *pd_curhdr;
-	struct body *pd_curbody;
+	struct line *pd_curhdr;
+	struct line *pd_curbody;
 	char *pd_curptr;
 	int pd_done;
 	char pd_boundary[BOUNDARY_LEN + 1];
@@ -287,20 +287,19 @@ find_boundary(priv, boundary)
 	char *boundary;
 {
 	int i;
-	struct body *b;
-	struct header *h;
+	struct line *l;
 
 	for (i = 0; i < BOUNDARY_LEN; i++)
 		boundary[i] = 'a';
 	boundary[BOUNDARY_LEN] = '\0';
 
 	do {
-		TAILQ_FOREACH(h, &priv->priv_header, h_list)
-			if (strstr(h->h_line, boundary) != NULL)
+		TAILQ_FOREACH(l, &priv->priv_header, l_list)
+			if (strstr(l->l_line, boundary) != NULL)
 				goto next;
 			
-		TAILQ_FOREACH(b, &priv->priv_body, b_list)
-			if (strstr(b->b_lines, boundary) != NULL)
+		TAILQ_FOREACH(l, &priv->priv_body, l_list)
+			if (strstr(l->l_lines, boundary) != NULL)
 				goto next;
 
 		return 0;
@@ -341,7 +340,7 @@ curl_post(buffer, size, nmemb, userp)
 			exit(EX_OSERR);
 		}
 		snprintf(buffer, len, post_header_templ, pd->pd_boundary);
-		pd->pd_curptr = pd->pd_curhdr->h_line;
+		pd->pd_curptr = pd->pd_curhdr->l_line;
 		goto finish;
 	}
 
@@ -356,7 +355,7 @@ curl_post(buffer, size, nmemb, userp)
 			if (len > 0)
 				memcpy(buffer, pd->pd_curptr, len);
 
-			pd->pd_curhdr = TAILQ_NEXT(pd->pd_curhdr, h_list);
+			pd->pd_curhdr = TAILQ_NEXT(pd->pd_curhdr, l_list);
 
 			/* 
 			 * If there are no more headers, we will move to
@@ -365,7 +364,7 @@ curl_post(buffer, size, nmemb, userp)
 			if (pd->pd_curhdr == NULL) 
 				pd->pd_curptr = pd->pd_curbody->b_lines;
 			else
-				pd->pd_curptr = pd->pd_curhdr->h_line;
+				pd->pd_curptr = pd->pd_curhdr->l_line;
 
 		} else { /* (len > size * nmemb) */
 			/* 

@@ -1,4 +1,4 @@
-/* $Id: prop.c,v 1.3 2009/08/14 00:09:02 manu Exp $ */
+/* $Id: prop.c,v 1.4 2012/02/18 05:14:25 manu Exp $ */
 
 /*
  * Copyright (c) 2006-2008 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: prop.c,v 1.3 2009/08/14 00:09:02 manu Exp $");
+__RCSID("$Id: prop.c,v 1.4 2012/02/18 05:14:25 manu Exp $");
 #endif
 #endif
 
@@ -247,5 +247,142 @@ prop_regex_validate(ad, stage, ap, priv)
 	}
 
 	return retval;
+}
+
+#define ERRLEN 1024
+typedef enum { PBV_BODY, PBV_HEADER } pbv_t;
+
+static int 
+prop_data_validate(ad, stage, ap, priv, type)
+	acl_data_t *ad;
+	acl_stage_t stage;
+	struct acl_param *ap;
+	struct mlfi_priv *priv; 
+	pbv_t type;
+{
+	struct prop *up;
+	struct line *l;
+	int retval = 0;
+	char *typestr;
+	struct bh_line *data;
+
+	if (type == PBV_BODY) {
+		typestr = "body";
+		data = &priv->priv_body;
+	} else {
+		typestr = "header";
+		data = &priv->priv_header;
+	}
+
+	if (stage != AS_DATA) {
+		mg_log(LOG_ERR, "%s filter called at non DATA stage", typestr);
+		exit(EX_SOFTWARE);
+	}
+
+	LIST_FOREACH(up, &priv->priv_prop, up_list) {
+		size_t len;
+		char *regexstr = NULL;
+		regex_t regex;
+		int is_regex;
+
+		if (strcasecmp(ad->string, up->up_name) != 0)
+			continue;
+
+		if (conf.c_debug)
+			mg_log(LOG_DEBUG, "test $%s = %s vs %s",
+			    up->up_name, up->up_value, typestr);
+
+		len = strlen(up->up_value);
+		is_regex = 0;
+
+		/*
+		 * Regex case
+		 */
+		if (up->up_value[0] == '/' && up->up_value[len - 1] == '/') {
+			char errstr[ERRLEN + 1];
+			int fl;
+			int error;
+
+			if ((regexstr = strdup(up->up_value)) == NULL) {
+				mg_log(LOG_ERR, "strdup failed");
+				exit(EX_OSERR);
+			}
+			
+			/* Strip trailing / */
+			regexstr[len - 1] = '\0';
+	
+			fl = (REG_ICASE | REG_NEWLINE | REG_NOSUB);
+			if (conf.c_extendedregex)
+				fl |= REG_EXTENDED;
+
+			/* +1 to strip leading / */
+			if ((error = regcomp(&regex, regexstr + 1, fl)) != 0) {
+				regerror(error, &regex, errstr, ERRLEN);
+				mg_log(LOG_WARNING, "bad regular expression "
+				       "\"%s\": %s", regexstr, errstr);
+				free(regexstr);
+				continue;
+        		}
+
+			is_regex = 1;
+		}
+
+
+		/* 
+		 * For each line
+		 */
+		TAILQ_FOREACH(l, data, l_list) {
+			if (conf.c_debug)
+				mg_log(LOG_DEBUG, "test $%s = %s vs \"%s\"",
+				    up->up_name, up->up_value, l->l_line);
+
+			/*
+			 * substring match
+			 */
+			if (!is_regex) {
+				if (strstr(l->l_line, up->up_value) != NULL)
+					return 1;
+				continue;
+			}
+
+			/* 
+			 * regex match
+			 */
+			if (regexec(&regex, l->l_line, 0, NULL, 0) == 0) {
+				retval = 1;
+				break;
+			}
+		}
+
+		if (is_regex) {
+			regfree(&regex);
+			free(regexstr);
+		}
+
+		if (retval == 1)
+			return 1;
+	}
+
+	return 0;
+}
+
+int 
+prop_body_validate(ad, stage, ap, priv)
+	acl_data_t *ad;
+	acl_stage_t stage;
+	struct acl_param *ap;
+	struct mlfi_priv *priv; 
+{
+	return prop_data_validate(ad, stage, ap, priv, PBV_BODY);
+}
+
+int 
+prop_header_validate(ad, stage, ap, priv)
+	acl_data_t *ad;
+	acl_stage_t stage;
+	struct acl_param *ap;
+	struct mlfi_priv *priv; 
+{
+	return prop_data_validate(ad, stage, ap, priv, PBV_HEADER);
 }
 #endif /* USE_CURL || USE_LDAP */

@@ -1,4 +1,4 @@
-/* $Id: acl.c,v 1.97 2010/04/12 12:04:41 manu Exp $ */
+/* $Id: acl.c,v 1.98 2012/02/18 05:14:24 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: acl.c,v 1.97 2010/04/12 12:04:41 manu Exp $");
+__RCSID("$Id: acl.c,v 1.98 2012/02/18 05:14:24 manu Exp $");
 #endif
 #endif
 
@@ -250,6 +250,12 @@ struct acl_clause_rec acl_clause_rec[] = {
 	  AT_LIST, AC_NONE, AC_NONE, EXF_BODY,
 	  acl_print_list, acl_add_list, 
 	  NULL, acl_list_filter },
+#if defined(USE_CURL) || defined(USE_LDAP)
+	{ AC_BODY_PROP, MULTIPLE_OK, AS_DATA, "body_prop", 
+	  AT_STRING, AC_BODY_LIST, AC_STRING, EXF_BODY,
+	  acl_print_string, acl_add_body_string, 
+	  acl_free_string, prop_body_validate },
+#endif
 	{ AC_HEADER, MULTIPLE_OK, AS_DATA, "header", 
 	  AT_STRING, AC_HEADER_LIST, AC_STRING, EXF_HEADER,
 	  acl_print_string, acl_add_body_string, 
@@ -262,6 +268,12 @@ struct acl_clause_rec acl_clause_rec[] = {
 	  AT_LIST, AC_NONE, AC_NONE, EXF_HEADER,
 	  acl_print_list, acl_add_list, 
 	  NULL, acl_list_filter },
+#if defined(USE_CURL) || defined(USE_LDAP)
+	{ AC_HEADER_PROP, MULTIPLE_OK, AS_DATA, "header_prop", 
+	  AT_STRING, AC_HEADER_LIST, AC_STRING, EXF_HEADER,
+	  acl_print_string, acl_add_body_string, 
+	  acl_free_string, prop_header_validate },
+#endif
 	{ AC_MACRO, MULTIPLE_OK, AS_ANY, "macro", 
 	  AT_MACRO, AC_MACRO_LIST, AC_STRING, EXF_MACRO,
 	  acl_print_macro, acl_add_macro,
@@ -543,15 +555,15 @@ acl_header_strstr(ad, stage, ap, priv)
 	struct acl_param *ap;
 	struct mlfi_priv *priv;
 {
-	struct header *h;
+	struct line *l;
 	 
 	if (stage != AS_DATA) {
 		mg_log(LOG_ERR, "header filter called at non DATA stage");
 		exit(EX_SOFTWARE);
 	}
 
-	TAILQ_FOREACH(h, &priv->priv_header, h_list)
-		if (strstr(h->h_line, ad->string) != NULL)
+	TAILQ_FOREACH(l, &priv->priv_header, l_list)
+		if (strstr(l->l_line, ad->string) != NULL)
 			return 1;
 	return 0;
 }
@@ -563,15 +575,15 @@ acl_body_strstr(ad, stage, ap, priv)
 	struct acl_param *ap;
 	struct mlfi_priv *priv;
 {
-	struct body *b;
+	struct line *l;
 	 
 	if (stage != AS_DATA) {
 		mg_log(LOG_ERR, "body filter called at non DATA stage");
 		exit(EX_SOFTWARE);
 	}
 
-	TAILQ_FOREACH(b, &priv->priv_body, b_list)
-		if (strstr(b->b_lines, ad->string) != NULL)
+	TAILQ_FOREACH(l, &priv->priv_body, l_list)
+		if (strstr(l->l_line, ad->string) != NULL)
 			return 1;
 
 	return 0;
@@ -793,15 +805,15 @@ acl_header_regexec(ad, stage, ap, priv)
 	struct acl_param *ap;
 	struct mlfi_priv *priv;
 {
-	struct header *h;
+	struct line *l;
 	 
 	if (stage != AS_DATA) {
 		mg_log(LOG_ERR, "header filter called at non DATA stage");
 		exit(EX_SOFTWARE);
 	}
 
-	TAILQ_FOREACH(h, &priv->priv_header, h_list)
-		if (myregexec(priv, ad, ap, h->h_line) == 0)
+	TAILQ_FOREACH(l, &priv->priv_header, l_list)
+		if (myregexec(priv, ad, ap, l->l_line) == 0)
 			return 1;
 	return 0;
 }
@@ -927,15 +939,15 @@ acl_body_regexec(ad, stage, ap, priv)
 	struct acl_param *ap;
 	struct mlfi_priv *priv;
 {
-	struct body *b;
+	struct line *l;
 	 
 	if (stage != AS_DATA) {
 		mg_log(LOG_ERR, "body filter called at non DATA stage");
 		exit(EX_SOFTWARE);
 	}
 
-	TAILQ_FOREACH(b, &priv->priv_body, b_list)
-		if (myregexec(priv, ad, ap, b->b_lines) == 0)
+	TAILQ_FOREACH(l, &priv->priv_body, l_list)
+		if (myregexec(priv, ad, ap, l->l_line) == 0)
 			return 1;
 	return 0;
 }

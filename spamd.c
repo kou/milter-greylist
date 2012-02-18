@@ -1,4 +1,4 @@
-/* $Id: spamd.c,v 1.16 2010/07/12 01:38:14 manu Exp $ */
+/* $Id: spamd.c,v 1.17 2012/02/18 05:14:25 manu Exp $ */
 
 /*
  * Copyright (c) 2008-2010 Manuel Badzong, Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: spamd.c,v 1.16 2010/07/12 01:38:14 manu Exp $");
+__RCSID("$Id: spamd.c,v 1.17 2012/02/18 05:14:25 manu Exp $");
 #endif
 #endif
 
@@ -156,8 +156,7 @@ spamd_check(ad, stage, ap, priv)
 	struct mlfi_priv *priv;
 {
 	int sock;
-	struct header *h;
-	struct body *b;
+	struct line *l;
 	char buffer[SPAMD_BUFLEN];
 	char rcvhdr[SPAMD_BUFLEN];
 	char *p, *q;
@@ -188,12 +187,12 @@ spamd_check(ad, stage, ap, priv)
 		if (spamd_write(sock, rcvhdr, strlen(rcvhdr)) == -1)
 			return -1;
 
-	TAILQ_FOREACH(h, &priv->priv_header, h_list)
-		if (spamd_write(sock, h->h_line, h->h_len) == -1)
+	TAILQ_FOREACH(l, &priv->priv_header, l_list)
+		if (spamd_write(sock, l->l_line, l->l_len) == -1)
 			return -1;
-			
-	TAILQ_FOREACH(b, &priv->priv_body, b_list)
-		if (spamd_write(sock, b->b_lines, b->b_len) == -1)
+		
+	TAILQ_FOREACH(l, &priv->priv_body, l_list)
+		if (spamd_write(sock, l->l_lines, l->l_len) == -1)
 			return -1;
 
 	if (spamd_read(sock, buffer, SPAMD_BUFLEN) == -1)

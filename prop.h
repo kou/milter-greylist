@@ -1,4 +1,4 @@
-/* $Id: prop.h,v 1.2 2012/02/18 05:14:25 manu Exp $ */
+/* $Id: prop.h,v 1.3 2012/02/18 16:09:29 manu Exp $ */
 
 /*
  * Copyright (c) 2008 Emmanuel Dreyfus
@@ -43,18 +43,18 @@ struct prop {
 	char *up_name;
 	char *up_value;
 	int up_flags;
+	char *up_rcpt;
 	LIST_ENTRY(prop) up_list;
 };
 
-#define UP_CLEARPROP	0x4
-#define UP_TMPPROP	0x8
+#define UP_CLEARPROP	0x04
+#define UP_TMPPROP	0x08
+#define UP_PLAINPROP	0x10
 
 void prop_push(char *, char *, int, struct mlfi_priv *);
-void prop_clear_tmp(struct mlfi_priv *);
+void prop_clear(struct mlfi_priv *, int);
 void prop_untmp(struct mlfi_priv *);
 char *prop_byname(struct mlfi_priv *, char *);
-void prop_clear_all(struct mlfi_priv *);
-void prop_clear(struct mlfi_priv *);
 int prop_string_validate(acl_data_t *, acl_stage_t,
 			 struct acl_param *, struct mlfi_priv *); 
 int prop_regex_validate(acl_data_t *, acl_stage_t,

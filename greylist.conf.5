@@ -1,5 +1,5 @@
 .\"
-.\" $Id: greylist.conf.5,v 1.106 2011/08/17 01:06:50 manu Exp $
+.\" $Id: greylist.conf.5,v 1.107 2012/02/18 16:09:29 manu Exp $
 .\"
 .\" Copyright (c) 2004-2010 Emmanuel Dreyfus
 .\" All rights reserved.
@@ -1274,6 +1274,16 @@ shortcut to %Rh:%Rm:Rs
 .TP
 .I %Hs
 SpamAssassin score (if build with SpamAssassin support)
+.TP
+.I %pn
+Name of last LDAP or CURL gathered property that matched an ACL. 
+.TP
+.I %pv
+Value of last LDAP or CURL gathered property that matched an ACL.
+.TP
+.I %pr
+Recipient that caused storage of the last matching LDAP or CURL 
+gathered property.
 .TP
 .I %%
 a single % character

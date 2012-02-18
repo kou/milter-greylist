@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.239 2012/02/18 05:14:25 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.240 2012/02/18 16:09:29 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.239 2012/02/18 05:14:25 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.240 2012/02/18 16:09:29 manu Exp $");
 #endif
 #endif
 
@@ -361,7 +361,7 @@ real_connect(ctx, hostname, addr)
 	priv->priv_ctx = ctx;
 	smtp_reply_init(&priv->priv_sr);
 	LIST_INIT(&priv->priv_rcpt);
-	priv->priv_cur_rcpt = NULL;
+	priv->priv_cur_rcpt[0] = '\0';
 	priv->priv_rcptcount = 0;
 	TAILQ_INIT(&priv->priv_header);
 	TAILQ_INIT(&priv->priv_body);
@@ -418,6 +418,10 @@ real_connect(ctx, hostname, addr)
 	priv->priv_p0f = NULL;
 	p0f_lookup(priv);
 #endif
+#if defined(USE_CURL) || defined(USE_LDAP)
+	LIST_INIT(&priv->priv_prop);
+	priv->priv_prop_match = NULL;
+#endif /* USE_CURL || USE_LDAP */
 	priv->priv_max_tarpitted = 0;
 	priv->priv_total_tarpitted = 0;
 
@@ -627,7 +631,7 @@ real_envrcpt(ctx, envrcpt)
 	 * Avoid properties gathered by urlcheck 
 	 * to mix for multiple recipients.
 	 */
-	prop_clear(priv);
+	prop_clear(priv, UP_CLEARPROP);
 #endif
 
 	if ((priv->priv_sr.sr_whitelist & EXF_WHITELIST) &&
@@ -673,7 +677,8 @@ real_envrcpt(ctx, envrcpt)
 	 * Check the ACL
 	 */
 	reset_acl_values(priv);
-	priv->priv_cur_rcpt = rcpt;
+	(void)strncpy(priv->priv_cur_rcpt, rcpt, ADDRLEN);
+	priv->priv_cur_rcpt[ADDRLEN] = '\0';
 	if (acl_filter(AS_RCPT, ctx, priv) != 0) {
 		mg_log(LOG_ERR, "ACL evaluation failure");
 		return SMFIS_TEMPFAIL;
@@ -993,7 +998,7 @@ real_eom(ctx)
 		return SMFIS_TEMPFAIL;
 	}
 
-	priv->priv_cur_rcpt = NULL; /* There is no current recipient */
+	priv->priv_cur_rcpt[0] = '\0'; /* There is no current recipient */
         /* we want fstring_expand to expand %E to priv_max_elapsed here */
 	priv->priv_sr.sr_elapsed = priv->priv_max_elapsed;
 
@@ -1356,7 +1361,7 @@ real_close(ctx)
 		if (priv->priv_buf)
 			free(priv->priv_buf);
 #if defined(USE_CURL) || defined(USE_LDAP)
-		prop_clear_all(priv);
+		prop_clear(priv, UP_PLAINPROP);
 #endif
 #ifdef USE_DNSRBL
 		dnsrbl_list_cleanup(priv);
@@ -3137,6 +3142,38 @@ fstring_expand(priv, rcpt, fstring)
 			mystrncat(&outstr, buf, &outmaxlen);
 			break;
 		}
+#if defined(USE_CURL) || defined(USE_LDAP)
+		case 'p': 	/* LDAP or CURL gathered props */
+			fstr_len = 2;
+
+			switch(*(ptok + 1)) {
+			case 'r':	/* recipent we got the prop from */
+				if ((priv->priv_prop_match == NULL) ||
+				    (priv->priv_prop_match->up_rcpt == NULL)) {
+					mystrncat(&outstr, "", &outmaxlen);
+					break;
+				}
+
+				mystrncat(&outstr, 
+					  priv->priv_prop_match->up_rcpt,
+					  &outmaxlen);
+				break;
+			case 'n':	/* property name */
+				mystrncat(&outstr, 
+					  priv->priv_prop_match->up_name,
+					  &outmaxlen);
+				break;
+			case 'v':	/* property value */
+				mystrncat(&outstr, 
+					  priv->priv_prop_match->up_value,
+					  &outmaxlen);
+				break;
+			default:
+				fstr_len = 0;
+				break;
+			}
+			break;
+#endif
 		case '%':	/* Literal '%' */
 			mystrncat(&outstr, "%", &outmaxlen);
 			break;

@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.h,v 1.85 2012/02/18 05:14:25 manu Exp $ */
+/* $Id: milter-greylist.h,v 1.86 2012/02/18 16:09:29 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2010 Emmanuel Dreyfus
@@ -194,7 +194,7 @@ struct mlfi_priv {
 	char priv_helo[ADDRLEN + 1];
 	char priv_from[ADDRLEN + 1];
 	LIST_HEAD(, rcpt) priv_rcpt;
-	char *priv_cur_rcpt;
+	char priv_cur_rcpt[ADDRLEN + 1];
 	int priv_rcptcount;
 	struct bh_line priv_header;
 	struct bh_line priv_body;
@@ -211,7 +211,8 @@ struct mlfi_priv {
 	long long priv_last_whitelist;
 #if defined(USE_CURL) || defined(USE_LDAP)
 	LIST_HEAD(, prop) priv_prop;
-#endif
+	struct prop *priv_prop_match;
+#endif /* USE_CURL || USE_LDAP */
 #ifdef USE_DNSRBL
 	LIST_HEAD(, dnsrbl_list) priv_dnsrbl;
 #endif

@@ -1,4 +1,4 @@
-/* $Id: urlcheck.c,v 1.36 2012/02/18 05:14:25 manu Exp $ */
+/* $Id: urlcheck.c,v 1.37 2012/02/18 16:09:29 manu Exp $ */
 
 /*
  * Copyright (c) 2006-2007 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: urlcheck.c,v 1.36 2012/02/18 05:14:25 manu Exp $");
+__RCSID("$Id: urlcheck.c,v 1.37 2012/02/18 16:09:29 manu Exp $");
 #endif
 #endif
 
@@ -1094,7 +1094,7 @@ answer_parse(data, ap, flags, priv)
 	 */
 	if (flags & U_GETPROP) {
 		if (retval == 0)
-			prop_clear_tmp(priv);
+			prop_clear(priv, UP_TMPPROP);
 		else
 			prop_untmp(priv);
 	}

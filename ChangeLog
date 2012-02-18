@@ -2,6 +2,8 @@
 	Typo fixes in man pages (Bernhard Schneider)
 	localaddr option so that Postfix user can use spf self
 	Allow filtering header and body against LDAP or CURL gathered properties
+	Add format string to report last matching LDAP or CURL propery
+	Fix memory corruption bug
 4.3.9
 	Fix wrong message size tracking, causing bug in spamd (Attila Bruncsak)
 	Fix ratelimit sliding window for computing average

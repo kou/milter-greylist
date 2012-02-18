@@ -1,4 +1,4 @@
-/* $Id: prop.c,v 1.4 2012/02/18 05:14:25 manu Exp $ */
+/* $Id: prop.c,v 1.5 2012/02/18 16:09:29 manu Exp $ */
 
 /*
  * Copyright (c) 2006-2008 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: prop.c,v 1.4 2012/02/18 05:14:25 manu Exp $");
+__RCSID("$Id: prop.c,v 1.5 2012/02/18 16:09:29 manu Exp $");
 #endif
 #endif
 
@@ -103,30 +103,26 @@ prop_push(linep, valp, clear, priv)
 	for (cp = up->up_value; *cp; cp++)
 		*cp = (char)tolower((int)*cp);
 
-	up->up_flags = UP_TMPPROP;
+	up->up_flags = UP_PLAINPROP|UP_TMPPROP;
 	if (clear)
 		up->up_flags |= UP_CLEARPROP;
+
+	/*
+	 * If called at RCPT stage, record the recipient
+	 */
+	if (priv->priv_cur_rcpt[0] != '\0') {
+		if ((up->up_rcpt = strdup(priv->priv_cur_rcpt)) == NULL) {
+			mg_log(LOG_ERR, "strdup failed: %s", strerror(errno));
+			exit(EX_OSERR);
+		}
+	} else {
+		up->up_rcpt = NULL;
+	}
 
 	LIST_INSERT_HEAD(&priv->priv_prop, up, up_list);
 
 	if (conf.c_debug)
 		mg_log(LOG_DEBUG, "got prop $%s = \"%s\"", linep, valp);
-
-	return;
-}
-
-void
-prop_clear_all(priv)
-	struct mlfi_priv *priv;
-{
-	struct prop *up;
-
-	while ((up = LIST_FIRST(&priv->priv_prop)) != NULL) {
-		free(up->up_name);
-		free(up->up_value);
-		LIST_REMOVE(up, up_list);
-		free(up);
-	}
 
 	return;
 }
@@ -155,6 +151,7 @@ prop_string_validate(ad, stage, ap, priv)
 			    up->up_name, up->up_value, string);
 
 		if (strcasecmp(up->up_value, string) == 0) {
+			priv->priv_prop_match = up;
 			retval = 1;
 			break;
 		}
@@ -165,8 +162,9 @@ prop_string_validate(ad, stage, ap, priv)
 }
 
 void
-prop_clear(priv)
+prop_clear(priv, flags)
 	struct mlfi_priv *priv; 
+	int flags;
 {
 	struct prop *up;
 	struct prop *nup;
@@ -175,31 +173,13 @@ prop_clear(priv)
 
 	while (up != NULL) {
 		nup = LIST_NEXT(up, up_list);
-		if (up->up_flags & UP_CLEARPROP) {
+		if (up->up_flags & flags) {
+			if (priv->priv_prop_match == up)
+				priv->priv_prop_match = NULL;
 			free(up->up_name);
 			free(up->up_value);
-			LIST_REMOVE(up, up_list);
-			free(up);
-		}
-		up = nup;
-	}
-	return;
-}
-
-void
-prop_clear_tmp(priv)
-	struct mlfi_priv *priv; 
-{
-	struct prop *up;
-	struct prop *nup;
-
-	up = LIST_FIRST(&priv->priv_prop); 
-
-	while (up != NULL) {
-		nup = LIST_NEXT(up, up_list);
-		if (up->up_flags & UP_TMPPROP) {
-			free(up->up_name);
-			free(up->up_value);
+			if (up->up_rcpt != NULL)
+				free(up->up_rcpt);
 			LIST_REMOVE(up, up_list);
 			free(up);
 		}
@@ -241,6 +221,7 @@ prop_regex_validate(ad, stage, ap, priv)
 			    up->up_name, up->up_value, upd->regex.re_copy);
 
 		if (myregexec(priv, upd, ap, up->up_value) == 0) {
+			priv->priv_prop_match = up;
 			retval = 1;
 			break;
 		}
@@ -340,8 +321,10 @@ prop_data_validate(ad, stage, ap, priv, type)
 			 * substring match
 			 */
 			if (!is_regex) {
-				if (strstr(l->l_line, up->up_value) != NULL)
+				if (strstr(l->l_line, up->up_value) != NULL) {
+					priv->priv_prop_match = up;
 					return 1;
+				}
 				continue;
 			}
 
@@ -349,6 +332,7 @@ prop_data_validate(ad, stage, ap, priv, type)
 			 * regex match
 			 */
 			if (regexec(&regex, l->l_line, 0, NULL, 0) == 0) {
+				priv->priv_prop_match = up;
 				retval = 1;
 				break;
 			}

@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.240 2012/02/18 16:09:29 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.241 2012/02/20 13:47:21 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.240 2012/02/18 16:09:29 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.241 2012/02/20 13:47:21 manu Exp $");
 #endif
 #endif
 
@@ -148,7 +148,7 @@ struct smfiDesc smfilter =
 {
 	"greylist",	/* filter name */
 	SMFI_VERSION,	/* version code */
-	SMFIF_ADDHDRS,	/* flags */
+	SMFIF_ADDHDRS|SMFIF_CHGBODY,	/* flags */
 	mlfi_connect,	/* connection info filter */
 	mlfi_helo,	/* SMTP HELO command filter */
 	mlfi_envfrom,	/* envelope sender filter */
@@ -365,6 +365,7 @@ real_connect(ctx, hostname, addr)
 	priv->priv_rcptcount = 0;
 	TAILQ_INIT(&priv->priv_header);
 	TAILQ_INIT(&priv->priv_body);
+	priv->priv_maxpeek = conf.c_maxpeek;
 	priv->priv_msgcount = 0;
 	priv->priv_buf = NULL;
 	priv->priv_buflen = 0;
@@ -820,11 +821,11 @@ real_header(ctx, name, value)
 	len = strlen(name) + strlen(sep) + strlen(value) + strlen(crlf);
 	priv->priv_msgcount += len;
 
-	if (priv->priv_msgcount > conf.c_maxpeek) {
+	if (priv->priv_msgcount > priv->priv_maxpeek) {
 		if (conf.c_debug)
 			mg_log(LOG_DEBUG, 
 			    "ignoring message beyond maxpeek = %d", 
-			    conf.c_maxpeek);
+			    priv->priv_maxpeek);
 		return SMFIS_CONTINUE;
 	}
 
@@ -903,10 +904,10 @@ real_body(ctx, chunk, size)
 	priv->priv_msgcount += size;
 
 	/* Avoid copying the whole message to save CPU */
-	if ((priv->priv_msgcount > conf.c_maxpeek) || 
-	    (priv->priv_buflen > conf.c_maxpeek)) {
+	if ((priv->priv_msgcount > priv->priv_maxpeek) || 
+	    (priv->priv_buflen > priv->priv_maxpeek)) {
 		mg_log(LOG_DEBUG, "ignoring message beyond maxpeek = %d", 
-		    conf.c_maxpeek);
+		    priv->priv_maxpeek);
 		return SMFIS_CONTINUE;
 	}
 
@@ -1127,6 +1128,7 @@ real_eom(ctx)
 
 passed:
 	/* Add custom header from DATA stage ACL */
+	/* XXX we do it twice??? */
 	if (priv->priv_sr.sr_addheader) {
 		char *hdrname;
 		char *hdrvalue;
@@ -1143,6 +1145,36 @@ passed:
 		}
 
 		free(hdrname);
+	}
+
+	/* Add footer if we have the whole message */
+	if (priv->priv_sr.sr_addfooter && 
+	    (priv->priv_msgcount <= priv->priv_maxpeek)) {
+		char *footer;
+		unsigned char *newbody;
+		size_t newlen;
+		struct line *l;
+
+		footer = fstring_expand(priv, NULL, priv->priv_sr.sr_addfooter);
+		newlen = strlen(footer);
+		TAILQ_FOREACH(l, &priv->priv_body, l_list)
+			newlen += l->l_len;
+
+		if ((newbody = malloc(newlen)) == NULL) {
+			mg_log(LOG_ERR, "malloc failed: %s", strerror(errno));
+			exit(EX_OSERR);
+		}
+
+		newbody[0] = '\0';
+		TAILQ_FOREACH(l, &priv->priv_body, l_list)
+			(void)strcat((char *)newbody, l->l_line);
+
+		(void)strcat((char *)newbody, footer);
+
+		if (smfi_replacebody(ctx, newbody, newlen) != MI_SUCCESS)
+			mg_log(LOG_WARNING, "smfi_replacebody failed");
+
+		free(footer);
 	}
 
 	/* Restore the info collected from RCPT stage */
@@ -1683,6 +1715,7 @@ main(argc, argv)
 	if (conf.c_maxpeek == 0) {
 		smfilter.xxfi_header = NULL;
 		smfilter.xxfi_body = NULL;
+		smfilter.xxfi_flags &= ~SMFIF_CHGBODY;
 	}
 
 	/* 
@@ -2243,7 +2276,10 @@ smtp_reply_free(sr)
 	free(sr->sr_msg_x);
 	free(sr->sr_report);
 	free(sr->sr_report_x);
-	free(sr->sr_addheader);
+	if (sr->sr_addheader)
+		free(sr->sr_addheader);
+	if (sr->sr_addfooter)
+		free(sr->sr_addfooter);
 
 	if (sr->sr_pmatch) {
 		int i;		
@@ -3173,6 +3209,51 @@ fstring_expand(priv, rcpt, fstring)
 				break;
 			}
 			break;
+		case 'P': { 	/* random prop value: %P{propname} */
+			char *cp;
+			char *value;
+			char *name;
+
+			switch(*(ptok + 1)) {
+			case '{':
+				fstr_len = 2;
+				/* Find the trailing } */
+				for (cp = ptok + 2; *cp; cp++) {
+					fstr_len++;
+					if (*cp == '}')
+						break;
+				}
+
+				/* No match, no substitution */
+				if (*cp == '\0')
+					fstr_len = 0;
+
+				break;
+			default:
+				fstr_len = 2;
+				break;
+			}
+
+			if (fstr_len == 0)
+				break;
+
+			if ((name = malloc(fstr_len + 1)) == NULL) {
+				mg_log(LOG_ERR, "malloc failed: %s", 
+				    strerror(errno));
+				exit(EX_OSERR);
+			}
+			/* +2/-3 to skip the leading P{ and trailing } */
+			memcpy(name, ptok + 2, fstr_len - 3);
+			name[fstr_len - 3] = '\0';
+
+			if ((value = prop_byname(priv, name)) == NULL)
+				value = "";
+
+			mystrncat(&outstr, value, &outmaxlen);
+
+			free(name);
+			break;
+		}
 #endif
 		case '%':	/* Literal '%' */
 			mystrncat(&outstr, "%", &outmaxlen);

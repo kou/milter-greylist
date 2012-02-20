@@ -1,4 +1,4 @@
-/* $Id: acl.h,v 1.46 2012/02/18 16:09:29 manu Exp $ */
+/* $Id: acl.h,v 1.47 2012/02/20 13:47:21 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -158,6 +158,8 @@ struct acl_param {
 	char *ap_msg;
 	char *ap_report;
 	char *ap_addheader;
+	char *ap_addfooter;
+	int ap_maxpeek;
 	int ap_nmatch;
 	char **ap_pmatch;
 };
@@ -172,6 +174,7 @@ struct acl_param {
 #define A_DROP_ACL		0x040
 #define A_NOLOG			0x080
 #define A_FREE_ADDHEADER	0x100
+#define A_FREE_ADDFOOTER	0x200
 
 struct all_list_entry;
 
@@ -257,6 +260,8 @@ struct acl_entry {
 	char *a_msg;
 	char *a_report;
 	char *a_addheader;
+	char *a_addfooter;
+	int a_maxpeek;
 	TAILQ_ENTRY(acl_entry) a_list;
 };
 
@@ -282,6 +287,9 @@ void acl_add_ecode(char *);
 void acl_add_msg(char *);
 void acl_add_report(char *);
 void acl_add_addheader(char *);
+void acl_add_addfooter(char *);
+void acl_add_maxpeek(int);
+void acl_maxpeek_fixup(int);
 struct acl_entry *acl_register_entry_first(acl_stage_t, acl_type_t);
 struct acl_entry *acl_register_entry_last(acl_stage_t, acl_type_t);
 int acl_filter(acl_stage_t, SMFICTX *, struct mlfi_priv *);

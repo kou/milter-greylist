@@ -1,4 +1,4 @@
-/* $Id: spamd.c,v 1.18 2012/02/18 16:09:29 manu Exp $ */
+/* $Id: spamd.c,v 1.19 2012/02/20 13:47:21 manu Exp $ */
 
 /*
  * Copyright (c) 2008-2010 Manuel Badzong, Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: spamd.c,v 1.18 2012/02/18 16:09:29 manu Exp $");
+__RCSID("$Id: spamd.c,v 1.19 2012/02/20 13:47:21 manu Exp $");
 #endif
 #endif
 

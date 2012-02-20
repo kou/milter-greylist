@@ -1,4 +1,4 @@
-/* $Id: acl.c,v 1.99 2012/02/18 16:09:29 manu Exp $ */
+/* $Id: acl.c,v 1.100 2012/02/20 13:47:21 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: acl.c,v 1.99 2012/02/18 16:09:29 manu Exp $");
+__RCSID("$Id: acl.c,v 1.100 2012/02/20 13:47:21 manu Exp $");
 #endif
 #endif
 
@@ -1219,6 +1219,15 @@ acl_init_entry(void)
 	acl->a_autowhite = -1;
 	acl->a_tarpit = -1;
 	acl->a_tarpit_scope = -1;
+
+	/*
+	 * First gacl initialzation is done before conf is
+	 * valid. We therefore have to set to 0 and have
+	 * maxpeek global setting overwriting gacl->a_maxpeek
+	 * in acl_maxpeek_fixup()
+	 */
+        acl->a_maxpeek = (&conf != NULL) ? conf.c_maxpeek : 0;
+
 	TAILQ_INIT(&acl->a_clause);
 
 	return acl;
@@ -1264,6 +1273,8 @@ acl_free_entry(acl)
 		free(acl->a_report);
 	if (acl->a_addheader != NULL)
 		free(acl->a_addheader);
+	if (acl->a_addfooter != NULL)
+		free(acl->a_addfooter);
 	free(acl);
 
 	return;
@@ -1981,6 +1992,8 @@ acl_filter(stage, ctx, priv)
 		ap.ap_msg = acl->a_msg;
 		ap.ap_report = acl->a_report;
 		ap.ap_addheader = acl->a_addheader;
+		ap.ap_addfooter = acl->a_addfooter;
+		ap.ap_maxpeek = acl->a_maxpeek;
 
 		/*
 		 * Free pointers to stored parenthesized substrings 
@@ -2110,6 +2123,17 @@ acl_filter(stage, ctx, priv)
 				exit(EX_OSERR);
 			}
 		}
+		if (ap.ap_addfooter) {
+			priv->priv_sr.sr_addfooter = strdup(ap.ap_addfooter);
+			if (priv->priv_sr.sr_addfooter == NULL) {
+				mg_log(LOG_ERR, "strdup failed");
+				exit(EX_OSERR);
+			}
+			(void)fstring_escape(priv->priv_sr.sr_addfooter);
+		}
+
+		if (stage == AS_RCPT)
+			priv->priv_maxpeek = ap.ap_maxpeek;
 
 		priv->priv_sr.sr_nmatch = ap.ap_nmatch;
 		priv->priv_sr.sr_pmatch = ap.ap_pmatch;
@@ -2127,6 +2151,8 @@ acl_filter(stage, ctx, priv)
 			free(ap.ap_report);
 		if (ap.ap_flags & A_FREE_ADDHEADER)
 			free(ap.ap_addheader);
+		if (ap.ap_flags & A_FREE_ADDFOOTER)
+			free(ap.ap_addfooter);
 
 		if (ap.ap_flags & A_FLUSHADDR) {
 			struct tuple_fields tuple;
@@ -2470,6 +2496,16 @@ acl_entry(entrystr, len, acl)
 		    "[addheader \"%s\"] ", acl->a_addheader);
 		mystrlcat(entrystr, tempstr, len);
 	}
+	if (acl->a_addfooter) {
+		snprintf(tempstr, sizeof(tempstr), 
+		    "[addfooter \"%s\"] ", acl->a_addfooter);
+		mystrlcat(entrystr, tempstr, len);
+	}
+	if (acl->a_maxpeek) {
+		snprintf(tempstr, sizeof(tempstr), 
+		    "[maxpeek %d] ", acl->a_maxpeek);
+		mystrlcat(entrystr, tempstr, len);
+	}
 
 	if (def)
 		mystrlcat(entrystr, "default", len);
@@ -2731,7 +2767,7 @@ acl_add_report(report)
 }
 
 void 
- acl_add_addheader(hdr)
+acl_add_addheader(hdr)
 	char *hdr;
 {
 	if (gacl->a_addheader) {
@@ -2749,6 +2785,48 @@ void
 	if (conf.c_debug || conf.c_acldebug)
 		mg_log(LOG_DEBUG, "load acl addheader \"%s\"", hdr);
 
+	return;
+}
+
+void 
+acl_add_addfooter(hdr)
+	char *hdr;
+{
+	if (gacl->a_addfooter) {
+		mg_log(LOG_ERR,
+		    "addfooter specified twice in ACL line %d", conf_line);
+		exit(EX_DATAERR);
+	}
+
+	if ((gacl->a_addfooter = strdup(hdr)) == NULL) {
+		mg_log(LOG_ERR,
+		    "malloc failed in ACL line %d", conf_line);
+		exit(EX_OSERR);
+	}
+		
+	if (conf.c_debug || conf.c_acldebug)
+		mg_log(LOG_DEBUG, "load acl addfooter \"%s\"", hdr);
+
+	return;
+}
+
+void
+acl_add_maxpeek(maxpeek)
+	int maxpeek;
+{
+	gacl->a_maxpeek = maxpeek;
+
+	if (conf.c_debug || conf.c_acldebug)
+		mg_log(LOG_DEBUG, "load acl maxpeek %d", maxpeek);
+
+	return;
+}
+
+void
+acl_maxpeek_fixup(maxpeek)
+	int maxpeek;
+{
+	gacl->a_maxpeek = maxpeek;
 	return;
 }
 

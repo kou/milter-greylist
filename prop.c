@@ -1,4 +1,4 @@
-/* $Id: prop.c,v 1.5 2012/02/18 16:09:29 manu Exp $ */
+/* $Id: prop.c,v 1.6 2012/02/20 13:47:21 manu Exp $ */
 
 /*
  * Copyright (c) 2006-2008 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: prop.c,v 1.5 2012/02/18 16:09:29 manu Exp $");
+__RCSID("$Id: prop.c,v 1.6 2012/02/20 13:47:21 manu Exp $");
 #endif
 #endif
 
@@ -369,4 +369,25 @@ prop_header_validate(ad, stage, ap, priv)
 {
 	return prop_data_validate(ad, stage, ap, priv, PBV_HEADER);
 }
+
+/* 
+ * This does not cope well with multivalued props
+ */
+char *
+prop_byname(priv, name)
+	struct mlfi_priv *priv;
+	char *name;
+{
+	struct prop *up;
+
+	LIST_FOREACH(up, &priv->priv_prop, up_list) {
+		if (strcasecmp(name, up->up_name) != 0)
+			continue;
+
+		return up->up_value;
+	}
+	
+	return NULL;
+}
+
 #endif /* USE_CURL || USE_LDAP */

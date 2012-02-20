@@ -1,4 +1,4 @@
-/* $Id: ldapcheck.c,v 1.11 2012/02/18 16:09:29 manu Exp $ */
+/* $Id: ldapcheck.c,v 1.12 2012/02/20 13:47:21 manu Exp $ */
 
 /*
  * Copyright (c) 2008 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: ldapcheck.c,v 1.11 2012/02/18 16:09:29 manu Exp $");
+__RCSID("$Id: ldapcheck.c,v 1.12 2012/02/20 13:47:21 manu Exp $");
 #endif
 #endif
 #include <ctype.h>

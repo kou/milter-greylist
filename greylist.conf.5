@@ -1,5 +1,5 @@
 .\"
-.\" $Id: greylist.conf.5,v 1.107 2012/02/18 16:09:29 manu Exp $
+.\" $Id: greylist.conf.5,v 1.108 2012/02/20 13:47:21 manu Exp $
 .\"
 .\" Copyright (c) 2004-2010 Emmanuel Dreyfus
 .\" All rights reserved.
@@ -283,7 +283,9 @@ An ACL entry can also hold various optional parameter used on match:
 .I code\fR,
 .I ecode\fR,
 .I report\fR,
+.I maxpeek\fR,
 .I addheader\fR,
+.I addfooter\fR,
 and
 .I msg\fR
 .TP
@@ -352,11 +354,31 @@ This string can be substituted as documented in the
 .B FORMAT STRINGS
 section.
 .TP
+.I maxpeek
+This parameter only makes sense in a RCPT-stage ACL. It overrides the
+global
+.I maxpeek 
+setting for DATA-stage handling of the message. It has no effect if
+global
+.I maxpeek
+is set to 0.
+.TP
 .I addheader
 This quoted string is a RFC822 header that gets added to the message. 
 Format string substitution is supported. No check is done for header
 length standard compliance, so make sure the substituted string is
 shorter than 2048 characters.
+.TP
+.I addfooter
+Append a footer to the message. Usual escape sequences such as \\n can
+be used to get special characters. The string is subject to format
+string expantion as described in the
+.B FORMAT STRINGS
+section. The footer will not be append if 
+.I milter-greylist
+was not able to capture the whole message, therefore 
+.I maxpeek 
+must be set approriately.
 .PP
 Entries in the access-list are evaluated sequentially, so order is
 very important. The first matching entry is used to decide if 
@@ -1284,6 +1306,10 @@ Value of last LDAP or CURL gathered property that matched an ACL.
 .I %pr
 Recipient that caused storage of the last matching LDAP or CURL 
 gathered property.
+.I %P
+a LDAP or CURL gathered propery. Example:
+.I %P{mail}
+Note that this copes very badly with multivalued properties.
 .TP
 .I %%
 a single % character

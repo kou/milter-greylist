@@ -102,6 +102,7 @@ ecode		[Ee][Cc][Oo][Dd][Ee]
 msg		[Mm][Ss][Gg]
 header		[Hh][Ee][Aa][Dd][Ee][Rr]
 addheader	[Aa][Dd][Dd][Hh][Ee][Aa][Dd][Ee][Rr]
+addfooter	[Aa][Dd][Dd][Ff][Oo][Oo][Tt][Ee][Rr]
 body		[Bb][Oo][Dd][Yy]
 maxpeek		[Mm][Aa][Xx][Pp][Ee][Ee][Kk]
 geoipdb		[Gg][Ee][Oo][Ii][Pp][Dd][Bb]
@@ -172,7 +173,7 @@ data		[Dd][Aa][Tt][Aa]
 	#ifndef HAVE_BROKEN_RCSID
 	#include <sys/cdefs.h>
 	#ifdef __RCSID
-	__RCSID("$Id: conf_lex.l,v 1.99 2011/08/17 01:06:49 manu Exp $");
+	__RCSID("$Id: conf_lex.l,v 1.100 2012/02/20 13:47:21 manu Exp $");
 	#endif
 	#endif
 	#endif
@@ -271,6 +272,7 @@ data		[Dd][Aa][Tt][Aa]
 {msg}	  	{ return MSG; }
 {header}	{ BEGIN(S_REGEX); return GLHEADER; }
 {addheader}	{ return ADDHEADER; }
+{addfooter}	{ return ADDFOOTER; }
 {body}		{ BEGIN(S_REGEX); return BODY; }
 {maxpeek}	{ return MAXPEEK; }
 {geoipdb}	{ return GEOIPDB; }

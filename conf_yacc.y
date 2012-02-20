@@ -16,7 +16,7 @@
 %token LOGFAC_LOCAL5 LOGFAC_LOCAL6 LOGFAC_LOCAL7 P0F P0FSOCK DKIMCHECK
 %token SPAMDSOCK SPAMDSOCKT SPAMD DOMAINEXACT ADDHEADER NOLOG LDAPBINDDN 
 %token LDAPBINDPW TARPIT TARPIT_SCOPE SESSION COMMAND MX RATELIMIT KEY
-%token DOMATCH DATA LOCALADDR
+%token DOMATCH DATA LOCALADDR ADDFOOTER 
 
 %{
 #include "config.h"
@@ -24,7 +24,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: conf_yacc.y,v 1.114 2012/02/18 16:09:29 manu Exp $");
+__RCSID("$Id: conf_yacc.y,v 1.115 2012/02/20 13:47:21 manu Exp $");
 #endif
 #endif
 
@@ -940,6 +940,8 @@ acl_value:	greylist_value
 	|	flush_value
 	|	nolog_value
 	|	addheader_value
+	|	addfooter_value
+	|	maxpeek_value
 	;
 
 greylist_value:		GLXDELAY TDELAY 
@@ -1004,6 +1006,16 @@ addheader_value:	ADDHEADER QSTRING {
 				char hdr[QSTRLEN + 1];
 
 				acl_add_addheader(quotepath(hdr, $2, QSTRLEN));
+			}
+	;
+addfooter_value:	ADDFOOTER QSTRING {
+				char hdr[QSTRLEN + 1];
+
+				acl_add_addfooter(quotepath(hdr, $2, QSTRLEN));
+			}
+	;
+maxpeek_value:		MAXPEEK TNUMBER {
+				acl_add_maxpeek(atoi($2));
 			}
 	;
 no_clause:		NO { acl_negate_clause(); }
@@ -1312,7 +1324,7 @@ prop_clause:		PROP QSTRING {
 	;
 bodyprop_clause:	BODY PROP {
 #if defined(USE_CURL) || defined(USE_LDAP)
-			/* + 1 to strip leadin $ */
+			/* + 1 to strip leading $ */
 			acl_add_clause(AC_BODY_PROP, $2 + 1);
 #else
 			acl_drop();
@@ -1445,7 +1457,10 @@ rcptcount_clause:	RCPTCOUNT OP TNUMBER {
 nodrac:			NODRAC	{ conf.c_nodrac = 1; }
 	;
 
-maxpeek:		MAXPEEK TNUMBER { conf.c_maxpeek = humanized_atoi($2); }
+maxpeek:		MAXPEEK TNUMBER { 
+				conf.c_maxpeek = humanized_atoi($2); 
+				acl_maxpeek_fixup(conf.c_maxpeek);
+			}
 	;
 
 dnsrbldef:	dnsrbldefip | dnsrbldefnetblock

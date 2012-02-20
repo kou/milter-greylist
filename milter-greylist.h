@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.h,v 1.86 2012/02/18 16:09:29 manu Exp $ */
+/* $Id: milter-greylist.h,v 1.87 2012/02/20 13:47:21 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2010 Emmanuel Dreyfus
@@ -168,6 +168,7 @@ struct smtp_reply {
 	char *sr_report;
 	char *sr_report_x;
 	char *sr_addheader;
+	char *sr_addfooter;
 	sfsistat sr_retcode;
 	int sr_nmatch;
 	char **sr_pmatch;
@@ -198,6 +199,7 @@ struct mlfi_priv {
 	int priv_rcptcount;
 	struct bh_line priv_header;
 	struct bh_line priv_body;
+	int priv_maxpeek;
 #ifdef USE_GEOIP
 	const char *priv_ccode;
 #endif

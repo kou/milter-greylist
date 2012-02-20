@@ -1,4 +1,4 @@
-/* $Id: ldapcheck.c,v 1.12 2012/02/20 13:47:21 manu Exp $ */
+/* $Id: ldapcheck.c,v 1.13 2012/02/20 13:49:52 manu Exp $ */
 
 /*
  * Copyright (c) 2008 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: ldapcheck.c,v 1.12 2012/02/20 13:47:21 manu Exp $");
+__RCSID("$Id: ldapcheck.c,v 1.13 2012/02/20 13:49:52 manu Exp $");
 #endif
 #endif
 #include <ctype.h>
@@ -454,8 +454,9 @@ ldapcheck_validate(ad, stage, ap, priv)
 			
 			vals = ldap_get_values(lc->lc_ld, res, attr);
 			if (vals == NULL) {
-				mg_log(LOG_ERR, "ldap_get_values for URL \"%s\" attr %s "
-						"returns vals = NULL", attr, url);
+				mg_log(LOG_ERR, 
+				       "ldap_get_values for URL \"%s\" attr %s "
+					"returns vals = NULL", attr, url);
 				ldap_value_free(vals);
 				ldap_memfree(attr);
 				continue;
@@ -466,8 +467,10 @@ ldapcheck_validate(ad, stage, ap, priv)
 				acl_modify_by_prop(attr, *val, ap);
 				prop_push(attr, *val, clearprop, priv);
 				pushed++;
-				if (conf.c_acldebug) mg_log(LOG_DEBUG,
-					"acl debug: pushed prop %s: %s", attr,*val);
+				if (conf.c_acldebug)
+					mg_log(LOG_DEBUG,
+					       "acl debug: pushed prop "
+					       "%s: %s", attr,*val);
 			}
 
 			ldap_value_free(vals);
@@ -478,9 +481,9 @@ ldapcheck_validate(ad, stage, ap, priv)
 			ber_free(ber, 0);
 	}
 
-       if ((lce->lce_flags & L_DOMATCH) && (nmatch != 0))
-	       retval = 1;
-       else
+	if ((lce->lce_flags & L_DOMATCH) || conf.c_fixldapcheck)
+	       retval = (nmatch != 0);
+	else
 	       retval = 0; 
 
 bad:

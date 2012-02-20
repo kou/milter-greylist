@@ -7,6 +7,7 @@
 	Add a addfooter action clause in ACL, to add mail a footer
 	Allow per-dacl maxpeek setting, set by maxpeer action clause in racl
 	Add LDAP or CURL gathered property substitution in format strings
+	Add continue type ACL
 4.3.9
 	Fix wrong message size tracking, causing bug in spamd (Attila Bruncsak)
 	Fix ratelimit sliding window for computing average

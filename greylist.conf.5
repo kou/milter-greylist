@@ -1,5 +1,5 @@
 .\"
-.\" $Id: greylist.conf.5,v 1.108 2012/02/20 13:47:21 manu Exp $
+.\" $Id: greylist.conf.5,v 1.109 2012/02/20 13:49:52 manu Exp $
 .\"
 .\" Copyright (c) 2004-2010 Emmanuel Dreyfus
 .\" All rights reserved.
@@ -58,8 +58,9 @@ An access-list entry starts with the
 keyword followed by an optional id quoted string, then the
 .I greylist\fR,
 .I whitelist\fR,
+.I blacklist\fR,
 or
-.I blacklist
+.I continue
 keyword, and by any set of the following clauses: 
 .I addr\fR,
 .I domain\fR,
@@ -85,9 +86,20 @@ keyword, and by any set of the following clauses:
 (if built with --enable-dnsrbl).
 A message will match an ACL entry when it complies with all of its clauses.
 .PP
+The
+.I greylist\fR,
+.I whitelist\fR,
+and
+.I blacklist
+keywords will cause the message to be respectively greylisted, accepted 
+or rejected if all ACL clauses match, and ACL evaluation is terminated
+there. If an ACL with 
+.I continue
+keyword does match, nothing is decided and next ACL are evaluated.
+.PP
 Clauses can be negated, by prefixing them by the
 .I not
-keyword.
+keyword. Here is the detail of all possible clauses.
 .TP
 .I addr
 This clause is used to specify a netblock of source IP 
@@ -817,7 +829,11 @@ temporary failure if the LDAP directory is unreachable. In order to
 actually match when an object if returned by the LDAP directory, append
 the
 .I domatch
-keyword.
+keyword. The 
+.I fixldapcheck
+gloabal settings wan also be used to globaly cause 
+.I ldapcheck
+clauses to match.
 .PP
 Here is an example that will use various DNSRBL depending on a per-recipient
 setting stored in the 

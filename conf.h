@@ -1,4 +1,4 @@
-/* $Id: conf.h,v 1.52 2011/08/17 01:06:49 manu Exp $ */
+/* $Id: conf.h,v 1.53 2012/02/20 13:49:52 manu Exp $ */
 
 /*
  * Copyright (c) 2004 Emmanuel Dreyfus
@@ -119,6 +119,7 @@ struct conf_rec {
 	char c_spamdsocktype[QSTRLEN + 1];
 #endif
 	struct sockaddr_storage c_localaddr;
+	int c_fixldapcheck;
 };
 
 /* c_forced flags */

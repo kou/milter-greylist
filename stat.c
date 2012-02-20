@@ -1,4 +1,4 @@
-/* $Id: stat.c,v 1.8 2012/02/20 13:47:21 manu Exp $ */
+/* $Id: stat.c,v 1.9 2012/02/20 13:49:52 manu Exp $ */
 
 /*
  * Copyright (c) 2007-2010 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: stat.c,v 1.8 2012/02/20 13:47:21 manu Exp $");
+__RCSID("$Id: stat.c,v 1.9 2012/02/20 13:49:52 manu Exp $");
 #endif
 #endif
 

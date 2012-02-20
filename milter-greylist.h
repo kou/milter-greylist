@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.h,v 1.87 2012/02/20 13:47:21 manu Exp $ */
+/* $Id: milter-greylist.h,v 1.88 2012/02/20 13:49:52 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2010 Emmanuel Dreyfus

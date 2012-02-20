@@ -16,7 +16,7 @@
 %token LOGFAC_LOCAL5 LOGFAC_LOCAL6 LOGFAC_LOCAL7 P0F P0FSOCK DKIMCHECK
 %token SPAMDSOCK SPAMDSOCKT SPAMD DOMAINEXACT ADDHEADER NOLOG LDAPBINDDN 
 %token LDAPBINDPW TARPIT TARPIT_SCOPE SESSION COMMAND MX RATELIMIT KEY
-%token DOMATCH DATA LOCALADDR ADDFOOTER 
+%token DOMATCH DATA LOCALADDR ADDFOOTER CONTINUE FIXLDAPCHECK
 
 %{
 #include "config.h"
@@ -24,7 +24,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: conf_yacc.y,v 1.115 2012/02/20 13:47:21 manu Exp $");
+__RCSID("$Id: conf_yacc.y,v 1.116 2012/02/20 13:49:52 manu Exp $");
 #endif
 #endif
 
@@ -165,6 +165,7 @@ lines	:	lines netblock '\n'
 	|	lines urlcheckdef '\n'
 	|	lines ldapcheckdef '\n'
 	|	lines ldapconfdef '\n'
+	|	lines fixldapcheck '\n'
 	|	lines localaddrdef '\n'
 	|	lines p0fsockdef '\n'
 	|	lines spamdsockdef '\n'
@@ -850,6 +851,9 @@ rcpt_access_list:
 	|	RACL id BLACKLIST acl_entry { 
 			acl_register_entry_last(AS_RCPT, A_BLACKLIST);
 		}
+	|	RACL id CONTINUE acl_entry { 
+			acl_register_entry_last(AS_RCPT, A_CONTINUE);
+		}
 	;
 
 data_access_list:
@@ -861,6 +865,9 @@ data_access_list:
 		}
 	|	DACL id BLACKLIST acl_entry { 
 			acl_register_entry_last(AS_DATA, A_BLACKLIST);
+		}
+	|	DACL id CONTINUE acl_entry { 
+			acl_register_entry_last(AS_DATA, A_CONTINUE);
 		}
 	;
 
@@ -1662,6 +1669,8 @@ ldaptimeout:	GLTIMEOUT TDELAY {
 #endif
 		}
 	|
+	;
+fixldapcheck:	FIXLDAPCHECK { conf.c_fixldapcheck = 1; }
 	;
 localaddrdef:	LOCALADDR IPADDR { 
 			(void)memcpy(&conf.c_localaddr, &$2, 

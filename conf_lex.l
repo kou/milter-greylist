@@ -80,6 +80,7 @@ racl		[Rr][Aa][Cc][Ll]
 dacl		[Dd][Aa][Cc][Ll]
 whitelist	[Ww][Hh][Ii][Tt][Ee][Ll][Ii][Ss][Tt]:?
 blacklist	[Bb][Ll][Aa][Cc][Kk][Ll][Ii][Ss][Tt]:?
+continue	[Cc][Oo][Nn][Tt][Ii][Nn][Uu][Ee]
 default		[Dd][Ee][Ff][Aa][Uu][Ll][Tt]
 drac		[Dd][Rr][Aa][Cc]
 db		[Dd][Bb]
@@ -109,6 +110,7 @@ geoipdb		[Gg][Ee][Oo][Ii][Pp][Dd][Bb]
 geoip		[Gg][Ee][Oo][Ii][Pp]
 ldapconf	[Ll][Dd][Aa][Pp][Cc][Oo][Nn][Ff]
 ldapcheck	[Ll][Dd][Aa][Pp][Cc][Hh][Ee][Cc][Kk]
+fixldapcheck	[Ff][Ii][Xx][Ll][Dd][Aa][Pp][Cc][Hh][Ee][Cc][Kk]
 domatch		[Dd][Oo][Mm][Aa][Tt][Cc][Hh]
 logfac		[Ll][Oo][Gg][Ff][Aa][Cc]
 log_kern	[Kk][Ee][Rr][Nn]
@@ -173,7 +175,7 @@ data		[Dd][Aa][Tt][Aa]
 	#ifndef HAVE_BROKEN_RCSID
 	#include <sys/cdefs.h>
 	#ifdef __RCSID
-	__RCSID("$Id: conf_lex.l,v 1.100 2012/02/20 13:47:21 manu Exp $");
+	__RCSID("$Id: conf_lex.l,v 1.101 2012/02/20 13:49:52 manu Exp $");
 	#endif
 	#endif
 	#endif
@@ -279,6 +281,7 @@ data		[Dd][Aa][Tt][Aa]
 {geoip}		{ return GEOIP; }
 {ldapconf}	{ return LDAPCONF; }
 {ldapcheck}	{ return LDAPCHECK; }
+{fixldapcheck}	{ return FIXLDAPCHECK; }
 {domatch}	{ return DOMATCH; }
 {p0fsock}	{ return P0FSOCK; }
 {p0f}		{ BEGIN(S_REGEX); return P0F; }
@@ -347,6 +350,7 @@ data		[Dd][Aa][Tt][Aa]
 {dacl}		{ return DACL; }
 {whitelist}	{ return WHITELIST; }
 {blacklist}	{ return BLACKLIST; }
+{continue}	{ return CONTINUE; }
 {default}	{ return DEFAULT; }
 {domainexact}	{ return DOMAINEXACT; }
 {mx}            {       return MX; }

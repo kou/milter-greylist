@@ -1,4 +1,4 @@
-/* $Id: acl.h,v 1.47 2012/02/20 13:47:21 manu Exp $ */
+/* $Id: acl.h,v 1.48 2012/02/20 13:49:52 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -48,7 +48,7 @@
 #include <arpa/inet.h>
 #include <regex.h>
 
-typedef enum { A_GREYLIST, A_WHITELIST, A_BLACKLIST, } acl_type_t;
+typedef enum { A_GREYLIST, A_WHITELIST, A_BLACKLIST, A_CONTINUE, } acl_type_t;
 typedef enum { AS_NONE, AS_RCPT, AS_DATA, AS_ANY, } acl_stage_t;
 typedef enum { AT_NONE, AT_STRING, AT_REGEX, AT_NETBLOCK, AT_OPNUM, 
 	       AT_CLOCKSPEC, AT_DNSRBL, AT_MX, AT_URLCHECK, AT_MACRO, 

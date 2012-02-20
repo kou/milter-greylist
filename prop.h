@@ -1,4 +1,4 @@
-/* $Id: prop.h,v 1.4 2012/02/20 13:47:21 manu Exp $ */
+/* $Id: prop.h,v 1.5 2012/02/20 13:49:52 manu Exp $ */
 
 /*
  * Copyright (c) 2008 Emmanuel Dreyfus

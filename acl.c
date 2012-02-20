@@ -1,4 +1,4 @@
-/* $Id: acl.c,v 1.100 2012/02/20 13:47:21 manu Exp $ */
+/* $Id: acl.c,v 1.101 2012/02/20 13:49:52 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2007 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: acl.c,v 1.100 2012/02/20 13:47:21 manu Exp $");
+__RCSID("$Id: acl.c,v 1.101 2012/02/20 13:49:52 manu Exp $");
 #endif
 #endif
 
@@ -112,6 +112,8 @@ pthread_rwlock_t acl_lock;
 static struct acl_entry *gacl;
 int gneg;
 
+static int acl_actions(struct mlfi_priv *, acl_stage_t, struct acl_entry *,
+		       struct acl_param *, int);
 char *acl_print_netblock(acl_data_t *, char *, size_t);
 char *acl_print_string(acl_data_t *, char *, size_t);
 char *acl_print_regex(acl_data_t *, char *, size_t);
@@ -1831,6 +1833,9 @@ acl_register_entry_first(acl_stage, acl_type)/* acllist must be write-locked */
 		case A_BLACKLIST:
 			mg_log(LOG_DEBUG, "register acl first BLACKLIST");
 			break;
+		case A_CONTINUE:
+			mg_log(LOG_DEBUG, "register acl first CONTINUE");
+			break;
 		default:
 			mg_log(LOG_ERR, "unexpected acl_type %d", acl_type);
 			exit(EX_SOFTWARE);
@@ -1911,6 +1916,9 @@ acl_register_entry_last(acl_stage, acl_type)/* acllist must be write-locked */
 		case A_BLACKLIST:
 			mg_log(LOG_DEBUG, "register acl last BLACKLIST");
 			break;
+		case A_CONTINUE:
+			mg_log(LOG_DEBUG, "register acl last CONTINUE");
+			break;
 		default:
 			mg_log(LOG_ERR, "unexpected acl_type %d", acl_type);
 			exit(EX_SOFTWARE);
@@ -1919,6 +1927,163 @@ acl_register_entry_last(acl_stage, acl_type)/* acllist must be write-locked */
 	}
 
 	return acl;
+}
+
+static int
+acl_actions(priv, stage, acl, ap, retval)
+	struct mlfi_priv *priv;
+	acl_stage_t stage;
+	struct acl_entry *acl;
+	struct acl_param *ap;
+	int retval;
+{
+	struct sockaddr *sa;
+	socklen_t salen;
+	char addrstr[IPADDRSTRLEN];
+
+	sa = SA(&priv->priv_addr);
+	salen = priv->priv_addrlen;
+
+	if (retval == 0)
+		retval = EXF_DEFAULT;
+	switch (ap->ap_type) {
+	case A_GREYLIST:
+		retval |= EXF_GREYLIST;
+		break;
+	case A_WHITELIST:
+		retval |= EXF_WHITELIST;
+		break;
+	case A_BLACKLIST:
+		retval |= EXF_BLACKLIST;
+		break;
+	case A_CONTINUE:
+		break;
+	default:
+		mg_log(LOG_ERR, "corrupted acl list");
+		exit(EX_SOFTWARE);
+		break;
+	}
+
+	priv->priv_sr.sr_acl_line = acl->a_line;
+
+	priv->priv_sr.sr_delay =
+	    (ap->ap_delay != -1) ? ap->ap_delay : conf.c_delay;
+	priv->priv_sr.sr_autowhite =
+	    (ap->ap_autowhite != -1) ? 
+	    ap->ap_autowhite : conf.c_autowhite_validity;
+	priv->priv_sr.sr_tarpit =
+	    (ap->ap_tarpit != -1) ? ap->ap_tarpit : conf.c_tarpit;
+	priv->priv_sr.sr_tarpit_scope =
+	    (ap->ap_tarpit_scope != -1) ?
+	    ap->ap_tarpit_scope : conf.c_tarpit_scope;
+	if (ap->ap_tarpitted > priv->priv_max_tarpitted)
+		priv->priv_max_tarpitted = ap->ap_tarpitted;
+	if (ap->ap_tarpitted > priv->priv_total_tarpitted)
+		priv->priv_total_tarpitted = ap->ap_tarpitted;
+
+	if (ap->ap_id) {
+		priv->priv_sr.sr_acl_id = strdup(ap->ap_id);
+		if (priv->priv_sr.sr_acl_id == NULL) { 
+			mg_log(LOG_ERR, "strdup failed: %s", 
+			    strerror(errno));
+			exit(EX_OSERR);
+		}
+	}
+	if (ap->ap_code) {
+		priv->priv_sr.sr_code = strdup(ap->ap_code);
+		if (priv->priv_sr.sr_code == NULL) { 
+			mg_log(LOG_ERR, "strdup failed: %s", 
+			    strerror(errno));
+			exit(EX_OSERR);
+		}
+	}
+	if (ap->ap_ecode) {
+		priv->priv_sr.sr_ecode = strdup(ap->ap_ecode);
+		if (priv->priv_sr.sr_ecode == NULL) {
+			mg_log(LOG_ERR, "strdup failed: %s", 
+			    strerror(errno));
+			exit(EX_OSERR);
+		}
+	}
+	if (ap->ap_msg) {
+		priv->priv_sr.sr_msg = strdup(ap->ap_msg);
+		if (priv->priv_sr.sr_msg == NULL) {
+			mg_log(LOG_ERR, "strdup failed");
+			exit(EX_OSERR);
+		}
+	}
+	if (ap->ap_report) {
+		priv->priv_sr.sr_report = strdup(ap->ap_report);
+		if (priv->priv_sr.sr_report == NULL) {
+			mg_log(LOG_ERR, "strdup failed");
+			exit(EX_OSERR);
+		}
+	}
+	if (ap->ap_addheader) {
+mg_log(LOG_DEBUG, "===> %s", ap->ap_addheader);
+		priv->priv_sr.sr_addheader = strdup(ap->ap_addheader);
+		if (priv->priv_sr.sr_addheader == NULL) {
+			mg_log(LOG_ERR, "strdup failed");
+			exit(EX_OSERR);
+		}
+	}
+	if (ap->ap_addfooter) {
+		priv->priv_sr.sr_addfooter = strdup(ap->ap_addfooter);
+		if (priv->priv_sr.sr_addfooter == NULL) {
+			mg_log(LOG_ERR, "strdup failed");
+			exit(EX_OSERR);
+		}
+		(void)fstring_escape(priv->priv_sr.sr_addfooter);
+	}
+
+	if (stage == AS_RCPT)
+		priv->priv_maxpeek = ap->ap_maxpeek;
+
+	priv->priv_sr.sr_nmatch = ap->ap_nmatch;
+	priv->priv_sr.sr_pmatch = ap->ap_pmatch;
+		
+	/* Free temporary memory if nescessary */
+	if (ap->ap_flags & A_FREE_ID)
+		free(ap->ap_id);
+	if (ap->ap_flags & A_FREE_CODE)
+		free(ap->ap_code);
+	if (ap->ap_flags & A_FREE_ECODE)
+		free(ap->ap_ecode);
+	if (ap->ap_flags & A_FREE_MSG)
+		free(ap->ap_msg);
+	if (ap->ap_flags & A_FREE_REPORT)
+		free(ap->ap_report);
+	if (ap->ap_flags & A_FREE_ADDHEADER)
+		free(ap->ap_addheader);
+	if (ap->ap_flags & A_FREE_ADDFOOTER)
+		free(ap->ap_addfooter);
+
+	if (ap->ap_flags & A_FLUSHADDR) {
+		struct tuple_fields tuple;
+
+		tuple.sa = sa;
+		tuple.salen = salen;
+		tuple.queueid = priv->priv_queueid;
+		tuple.acl_line = acl->a_line;
+
+		mg_tuple_remove(&tuple);
+		}
+
+	if (ap->ap_flags & A_NOLOG)
+		retval |= EXF_NOLOG;
+
+	if (conf.c_debug || conf.c_acldebug) {
+		char aclstr[HDRLEN + 1];
+
+		iptostring(sa, salen, addrstr, sizeof(addrstr));
+		mg_log(LOG_DEBUG, "Mail from=%s, rcpt=%s, addr=%s[%s] "
+		    "is matched by entry %s", priv->priv_from, 
+		    (priv->priv_cur_rcpt) ? priv->priv_cur_rcpt : "(nil)",
+		    priv->priv_hostname, addrstr, 
+		    acl_entry(aclstr, HDRLEN, acl));
+	}
+
+	return retval;
 }
 
 int
@@ -2035,149 +2200,17 @@ acl_filter(stage, ctx, priv)
 		}
 
 		/*
-		 * We catch the first ACL entry that matches, so exit
-		 * evaluation loop when found.
+		 * If the ACl matched, apply actions.
+		 * Then exit evaluation if it was not a continue ACL
 		 */
-		if (found != 0)
-			break;
+		if (found != 0) {
+			retval = acl_actions(priv, stage, acl, &ap, retval);
+			if (ap.ap_type != A_CONTINUE)
+				break;
+		}
 	}
 
-	if (acl) {
-		if (retval == 0)
-			retval = EXF_DEFAULT;
-		switch (ap.ap_type) {
-		case A_GREYLIST:
-			retval |= EXF_GREYLIST;
-			break;
-		case A_WHITELIST:
-			retval |= EXF_WHITELIST;
-			break;
-		case A_BLACKLIST:
-			retval |= EXF_BLACKLIST;
-			break;
-		default:
-			mg_log(LOG_ERR, "corrupted acl list");
-			exit(EX_SOFTWARE);
-			break;
-		}
-
-		priv->priv_sr.sr_acl_line = acl->a_line;
-
-		priv->priv_sr.sr_delay =
-		    (ap.ap_delay != -1) ? ap.ap_delay : conf.c_delay;
-		priv->priv_sr.sr_autowhite =
-		    (ap.ap_autowhite != -1) ? 
-		    ap.ap_autowhite : conf.c_autowhite_validity;
-		priv->priv_sr.sr_tarpit =
-		    (ap.ap_tarpit != -1) ? ap.ap_tarpit : conf.c_tarpit;
-		priv->priv_sr.sr_tarpit_scope =
-		    (ap.ap_tarpit_scope != -1) ?
-		    ap.ap_tarpit_scope : conf.c_tarpit_scope;
-		if (ap.ap_tarpitted > priv->priv_max_tarpitted)
-			priv->priv_max_tarpitted = ap.ap_tarpitted;
-		if (ap.ap_tarpitted > priv->priv_total_tarpitted)
-			priv->priv_total_tarpitted = ap.ap_tarpitted;
-
-		if (ap.ap_id) {
-			priv->priv_sr.sr_acl_id = strdup(ap.ap_id);
-			if (priv->priv_sr.sr_acl_id == NULL) { 
-				mg_log(LOG_ERR, "strdup failed: %s", 
-				    strerror(errno));
-				exit(EX_OSERR);
-			}
-		}
-		if (ap.ap_code) {
-			priv->priv_sr.sr_code = strdup(ap.ap_code);
-			if (priv->priv_sr.sr_code == NULL) { 
-				mg_log(LOG_ERR, "strdup failed: %s", 
-				    strerror(errno));
-				exit(EX_OSERR);
-			}
-		}
-		if (ap.ap_ecode) {
-			priv->priv_sr.sr_ecode = strdup(ap.ap_ecode);
-			if (priv->priv_sr.sr_ecode == NULL) {
-				mg_log(LOG_ERR, "strdup failed: %s", 
-				    strerror(errno));
-				exit(EX_OSERR);
-			}
-		}
-		if (ap.ap_msg) {
-			priv->priv_sr.sr_msg = strdup(ap.ap_msg);
-			if (priv->priv_sr.sr_msg == NULL) {
-				mg_log(LOG_ERR, "strdup failed");
-				exit(EX_OSERR);
-			}
-		}
-		if (ap.ap_report) {
-			priv->priv_sr.sr_report = strdup(ap.ap_report);
-			if (priv->priv_sr.sr_report == NULL) {
-				mg_log(LOG_ERR, "strdup failed");
-				exit(EX_OSERR);
-			}
-		}
-		if (ap.ap_addheader) {
-			priv->priv_sr.sr_addheader = strdup(ap.ap_addheader);
-			if (priv->priv_sr.sr_addheader == NULL) {
-				mg_log(LOG_ERR, "strdup failed");
-				exit(EX_OSERR);
-			}
-		}
-		if (ap.ap_addfooter) {
-			priv->priv_sr.sr_addfooter = strdup(ap.ap_addfooter);
-			if (priv->priv_sr.sr_addfooter == NULL) {
-				mg_log(LOG_ERR, "strdup failed");
-				exit(EX_OSERR);
-			}
-			(void)fstring_escape(priv->priv_sr.sr_addfooter);
-		}
-
-		if (stage == AS_RCPT)
-			priv->priv_maxpeek = ap.ap_maxpeek;
-
-		priv->priv_sr.sr_nmatch = ap.ap_nmatch;
-		priv->priv_sr.sr_pmatch = ap.ap_pmatch;
-			
-		/* Free temporary memory if nescessary */
-		if (ap.ap_flags & A_FREE_ID)
-			free(ap.ap_id);
-		if (ap.ap_flags & A_FREE_CODE)
-			free(ap.ap_code);
-		if (ap.ap_flags & A_FREE_ECODE)
-			free(ap.ap_ecode);
-		if (ap.ap_flags & A_FREE_MSG)
-			free(ap.ap_msg);
-		if (ap.ap_flags & A_FREE_REPORT)
-			free(ap.ap_report);
-		if (ap.ap_flags & A_FREE_ADDHEADER)
-			free(ap.ap_addheader);
-		if (ap.ap_flags & A_FREE_ADDFOOTER)
-			free(ap.ap_addfooter);
-
-		if (ap.ap_flags & A_FLUSHADDR) {
-			struct tuple_fields tuple;
-
-			tuple.sa = sa;
-			tuple.salen = salen;
-			tuple.queueid = queueid;
-			tuple.acl_line = acl->a_line;
-
-			mg_tuple_remove(&tuple);
-			}
-
-		if (ap.ap_flags & A_NOLOG)
-			retval |= EXF_NOLOG;
-
-		if (conf.c_debug || conf.c_acldebug) {
-			char aclstr[HDRLEN + 1];
-
-			iptostring(sa, salen, addrstr, sizeof(addrstr));
-			mg_log(LOG_DEBUG, "Mail from=%s, rcpt=%s, addr=%s[%s] "
-			    "is matched by entry %s", from, 
-			    (cur_rcpt != NULL) ? cur_rcpt : "(nil)",
-			    hostname, addrstr, acl_entry(aclstr, HDRLEN, acl));
-		}
-	} else {
+	if (acl == NULL) {
 		/*
 		 * No match: use the default action
 		 */
@@ -2410,6 +2443,9 @@ acl_entry(entrystr, len, acl)
 		break;
 	case A_BLACKLIST:
 		mystrlcat(entrystr, "blacklist ", len);
+		break;
+	case A_CONTINUE:
+		mystrlcat(entrystr, "continue ", len);
 		break;
 	default:
 		mg_log(LOG_ERR, "corrupted acl list");
@@ -2852,6 +2888,8 @@ acl_modify_by_prop(key, value, ap)
 			ap->ap_type = A_BLACKLIST;
 		else if (strcasecmp(value, "whitelist") == 0)
 			ap->ap_type = A_WHITELIST;
+		else if (strcasecmp(value, "continue") == 0)
+			ap->ap_type = A_CONTINUE;
 		else
 			mg_log(LOG_WARNING, "ignored greylist-type \"%s\"",
 			    value);

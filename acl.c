@@ -1,7 +1,7 @@
-/* $Id: acl.c,v 1.101 2012/02/20 13:49:52 manu Exp $ */
+/* $Id: acl.c,v 1.102 2012/02/21 05:53:43 manu Exp $ */
 
 /*
- * Copyright (c) 2004-2007 Emmanuel Dreyfus
+ * Copyright (c) 2004-2012 Emmanuel Dreyfus
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: acl.c,v 1.101 2012/02/20 13:49:52 manu Exp $");
+__RCSID("$Id: acl.c,v 1.102 2012/02/21 05:53:43 manu Exp $");
 #endif
 #endif
 

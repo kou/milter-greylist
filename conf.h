@@ -1,4 +1,4 @@
-/* $Id: conf.h,v 1.53 2012/02/20 13:49:52 manu Exp $ */
+/* $Id: conf.h,v 1.54 2012/02/21 05:53:43 manu Exp $ */
 
 /*
  * Copyright (c) 2004 Emmanuel Dreyfus

@@ -1,7 +1,7 @@
-/* $Id: ldapcheck.h,v 1.4 2010/04/10 05:42:52 manu Exp $ */
+/* $Id: ldapcheck.h,v 1.5 2012/02/21 05:53:44 manu Exp $ */
 
 /*
- * Copyright (c) 2008 Emmanuel Dreyfus
+ * Copyright (c) 2008-2012 Emmanuel Dreyfus
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

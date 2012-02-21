@@ -1,7 +1,7 @@
-/* $Id: acl.h,v 1.48 2012/02/20 13:49:52 manu Exp $ */
+/* $Id: acl.h,v 1.49 2012/02/21 05:53:43 manu Exp $ */
 
 /*
- * Copyright (c) 2004-2007 Emmanuel Dreyfus
+ * Copyright (c) 2004-2012 Emmanuel Dreyfus
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

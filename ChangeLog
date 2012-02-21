@@ -1,4 +1,4 @@
-4.3.10
+4.4
 	Typo fixes in man pages (Bernhard Schneider)
 	localaddr option so that Postifix user can use spf self
 	Allow filtering header and body against LDAP or CURL gathered properties
@@ -8,6 +8,7 @@
 	Allow per-dacl maxpeek setting, set by maxpeer action clause in racl
 	Add LDAP or CURL gathered property substitution in format strings
 	Add continue type ACL
+	p0f v3 support
 4.3.9
 	Fix wrong message size tracking, causing bug in spamd (Attila Bruncsak)
 	Fix ratelimit sliding window for computing average

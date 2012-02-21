@@ -1,4 +1,4 @@
-/* $Id: urlcheck.c,v 1.39 2012/02/20 13:49:52 manu Exp $ */
+/* $Id: urlcheck.c,v 1.40 2012/02/21 05:53:44 manu Exp $ */
 
 /*
  * Copyright (c) 2006-2007 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: urlcheck.c,v 1.39 2012/02/20 13:49:52 manu Exp $");
+__RCSID("$Id: urlcheck.c,v 1.40 2012/02/21 05:53:44 manu Exp $");
 #endif
 #endif
 

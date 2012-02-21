@@ -1,7 +1,7 @@
-/* $Id: p0f.h,v 1.2 2010/03/13 06:57:47 manu Exp $ */
+/* $Id: p0f.h,v 1.3 2012/02/21 05:53:44 manu Exp $ */
 
 /*
- * Copyright (c) 2008 Emmanuel Dreyfus
+ * Copyright (c) 2008-2012 Emmanuel Dreyfus
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

@@ -175,7 +175,7 @@ data		[Dd][Aa][Tt][Aa]
 	#ifndef HAVE_BROKEN_RCSID
 	#include <sys/cdefs.h>
 	#ifdef __RCSID
-	__RCSID("$Id: conf_lex.l,v 1.101 2012/02/20 13:49:52 manu Exp $");
+	__RCSID("$Id: conf_lex.l,v 1.102 2012/02/21 05:53:43 manu Exp $");
 	#endif
 	#endif
 	#endif

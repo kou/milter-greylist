@@ -1,9 +1,9 @@
-# $Id: configure.ac,v 1.259 2011/04/13 01:41:45 manu Exp $
+# $Id: configure.ac,v 1.260 2012/02/21 05:53:44 manu Exp $
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.57)
-AC_INIT(milter-greylist, 4.3.9, manu@netbsd.org)
+AC_INIT(milter-greylist, 4.4a1, manu@netbsd.org)
 AC_CONFIG_SRCDIR([milter-greylist.c])
 AC_CONFIG_HEADER([config.h])
 
@@ -470,8 +470,12 @@ AC_ARG_ENABLE(drac,
 	[  --enable-drac	Enable DRAC support],
 	[if test x$enableval = xyes; then CFLAGS=$CFLAGS" -DUSE_DRAC"; fi])
 AC_ARG_ENABLE(p0f, 
-	[  --enable-p0f		Enable p0f support],
+	[  --enable-p0f		Enable p0f v2 support],
 	[if test x$enableval = xyes; then CFLAGS=$CFLAGS" -DUSE_P0F"; fi])
+AC_ARG_ENABLE(p0f3, 
+	[  --enable-p0f3	Enable p0f v3 support],
+	[if test x$enableval = xyes; then 
+	 CFLAGS=$CFLAGS" -DUSE_P0F -DHAVE_P0F3"; fi])
 
 # Check for SpamAssassin
 AC_ARG_ENABLE(spamassassin, 

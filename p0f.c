@@ -1,7 +1,7 @@
-/* $Id: p0f.c,v 1.13 2011/03/20 09:15:31 manu Exp $ */
+/* $Id: p0f.c,v 1.14 2012/02/21 05:53:44 manu Exp $ */
 
 /*
- * Copyright (c) 2008-2010 Emmanuel Dreyfus
+ * Copyright (c) 2008-2012 Emmanuel Dreyfus
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: p0f.c,v 1.13 2011/03/20 09:15:31 manu Exp $");
+__RCSID("$Id: p0f.c,v 1.14 2012/02/21 05:53:44 manu Exp $");
 #endif
 #endif
 #include <sys/types.h>
@@ -64,6 +64,7 @@ __RCSID("$Id: p0f.c,v 1.13 2011/03/20 09:15:31 manu Exp $");
 #include "milter-greylist.h"
 #include "p0f.h"
 
+#ifndef HAVE_P0F3
 #ifdef P0F_QUERY_FROM_P0F_DIST
 #include <p0f-query.h>
 #else /* P0F_QUERY_FROM_P0F_DIST */
@@ -97,6 +98,51 @@ struct p0f_response {
 };
 /* End of stuff borrowed from p0f/p0f-query.h */
 #endif /* P0F_QUERY_FROM_P0F_DIST */
+#else /* HAVE_P0F3 */
+#ifdef P0F_QUERY_FROM_P0F_DIST
+#include <api.h>
+#else /* P0F_QUERY_FROM_P0F_DIST */
+/* Begin of stuff borrowed from p0f/api.h */
+#define	P0F_QUERY_MAGIC 	0x50304601
+#define	P0F_RESP_MAGIC		0x50304602
+#define	P0F_STATUS_BADQUERY	0x00
+#define	P0F_STATUS_OK		0x10
+#define	P0F_STATUS_NOMATCH	0x20
+#define	P0F_ADDR_IPV4		0x04
+#define	P0F_ADDR_IPV6		0x06
+#define	P0F_STR_MAX		31
+#define	P0F_MATCH_FUZZY		0x01
+#define	P0F_MATCH_GENERIC	0x02
+
+struct p0f_api_query {
+	uint32_t magic;
+	uint8_t addr_type;
+	uint8_t addr[16];
+};
+
+struct p0f_api_response {
+	uint32_t magic;
+	uint32_t status;
+	uint32_t first_seen;
+	uint32_t last_seen;
+	uint32_t total_conn;
+	uint32_t uptime_min;
+	uint32_t up_mod_days;
+	uint32_t last_nat;
+	uint32_t last_chg;
+	int16_t distance;
+	uint8_t  bad_sw;
+	uint8_t  os_match_q;
+	uint8_t  os_name[P0F_STR_MAX + 1];
+	uint8_t  os_flavor[P0F_STR_MAX + 1];
+	uint8_t  http_name[P0F_STR_MAX + 1];
+	uint8_t  http_flavor[P0F_STR_MAX + 1];
+	uint8_t  link_type[P0F_STR_MAX + 1];
+	uint8_t  language[P0F_STR_MAX + 1];
+};
+/* End of stuff borrowed from p0f/api.h */
+#endif /* P0F_QUERY_FROM_P0F_DIST */
+#endif /* HAVE_P0F3 */
 
 static int p0f_connect(void);
 
@@ -133,6 +179,7 @@ p0f_regexec(ad, stage, ap, priv)
 	return 0;
 }
 
+#ifndef HAVE_P0F3
 int
 p0f_lookup(priv)
 	struct mlfi_priv *priv;
@@ -249,6 +296,101 @@ p0f_lookup(priv)
 	
 	return 0;
 }
+#else /* HAVE_P0F3 */
+int
+p0f_lookup(priv)
+	struct mlfi_priv *priv;
+{
+	struct p0f_api_query req;
+	struct p0f_api_response rep;
+	size_t len;
+	static int p0fsock = -1;
+
+	memset(&req, 0, sizeof(req));
+	memset(&rep, 0, sizeof(rep));
+
+	req.magic = P0F_QUERY_MAGIC;
+	switch (SA(&priv->priv_addr)->sa_family) {
+	case AF_INET:
+		req.addr_type = P0F_ADDR_IPV4;
+		memcpy(&req.addr, SADDR4(&priv->priv_addr), 
+		       sizeof(SADDR4(&priv->priv_addr)));
+		break;
+#ifdef AF_INET6
+	case AF_INET6:
+		req.addr_type = P0F_ADDR_IPV6;
+		memcpy(&req.addr, SADDR6(&priv->priv_addr),
+		       sizeof(SADDR6(&priv->priv_addr)));
+		break;
+#endif /* AF_INET6 */
+	default:
+		mg_log(LOG_ERR, "unexpected AF");
+		exit(EX_SOFTWARE);
+	}
+
+	if (p0fsock == -1)
+		p0fsock = p0f_connect();
+	if (p0fsock == -1)
+		return -1;
+
+	if (write(p0fsock, &req ,sizeof(req)) != sizeof(req)) {
+		mg_log(LOG_ERR, "writing to \"%s\" failed", conf.c_p0fsock);
+		goto bad;
+	}
+
+	if (read(p0fsock, &rep, sizeof(rep)) != sizeof(rep)) {
+		mg_log(LOG_ERR, "reading from \"%s\" failed", conf.c_p0fsock);
+		goto bad;
+	}
+
+	if (rep.magic != P0F_RESP_MAGIC) {
+		mg_log(LOG_ERR, "Unexpected p0f magic = %d", rep.magic);
+		goto bad;
+	}
+
+	switch(rep.status) {
+	case P0F_STATUS_BADQUERY:
+		mg_log(LOG_INFO, "p0f rejected query");
+		goto bad;
+		break;
+	case P0F_STATUS_NOMATCH:
+		mg_log(LOG_INFO, "p0f cache miss");
+		priv->priv_p0f = strdup("unknown");
+		return 0;
+		break;
+	case P0F_STATUS_OK:
+		break;
+	default:
+		mg_log(LOG_INFO, "Unexpected p0f status %d", rep.status);
+		goto bad;
+		break;
+	}
+
+	/* +2 for space and trailing \0 */
+	len = strlen((char *)rep.os_name) + strlen((char *)rep.os_flavor) + 2;
+	if (len == 2) {
+	if (conf.c_debug)
+		mg_log(LOG_DEBUG, "unknown OS for p0f");
+		return -1;
+	}
+
+	if ((priv->priv_p0f = malloc(len)) == NULL) {
+		mg_log(LOG_ERR, "malloc(%d) failed: %s", len, strerror(errno));
+		exit(EX_OSERR);
+	}
+
+	(void)sprintf(priv->priv_p0f, "%s %s", rep.os_name, rep.os_flavor);
+	if (conf.c_debug)
+		mg_log(LOG_DEBUG, "p0f identified \"%s\"", priv->priv_p0f);
+	
+	return 0;
+
+bad:
+	close(p0fsock);
+	p0fsock = -1;
+	return -1;
+}
+#endif /* HAVE_P0F3 */
 
 
 void
@@ -263,7 +405,7 @@ static int
 p0f_connect(void)
 {
 	struct sockaddr_un sun;
-	int p0fsock;
+	int p0fsock = -1;
 
 	if (!conf.c_p0fsock[0])
 		return -1;

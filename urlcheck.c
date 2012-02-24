@@ -1,4 +1,4 @@
-/* $Id: urlcheck.c,v 1.40 2012/02/21 05:53:44 manu Exp $ */
+/* $Id: urlcheck.c,v 1.41 2012/02/24 02:24:47 manu Exp $ */
 
 /*
  * Copyright (c) 2006-2007 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: urlcheck.c,v 1.40 2012/02/21 05:53:44 manu Exp $");
+__RCSID("$Id: urlcheck.c,v 1.41 2012/02/24 02:24:47 manu Exp $");
 #endif
 #endif
 
@@ -299,7 +299,7 @@ find_boundary(priv, boundary)
 				goto next;
 			
 		TAILQ_FOREACH(l, &priv->priv_body, l_list)
-			if (strstr(l->l_lines, boundary) != NULL)
+			if (strstr(l->l_line, boundary) != NULL)
 				goto next;
 
 		return 0;
@@ -362,7 +362,7 @@ curl_post(buffer, size, nmemb, userp)
 			 * the body on next time we are called.
 			 */
 			if (pd->pd_curhdr == NULL) 
-				pd->pd_curptr = pd->pd_curbody->b_lines;
+				pd->pd_curptr = pd->pd_curbody->l_line;
 			else
 				pd->pd_curptr = pd->pd_curhdr->l_line;
 
@@ -388,11 +388,11 @@ curl_post(buffer, size, nmemb, userp)
 
 			/* Move to the next one */
 			pd->pd_curbody = 
-			    TAILQ_NEXT(pd->pd_curbody, b_list);
+			    TAILQ_NEXT(pd->pd_curbody, l_list);
 
 			/* If it's not the last one... */
 			if (pd->pd_curbody != NULL)
-				pd->pd_curptr = pd->pd_curbody->b_lines;
+				pd->pd_curptr = pd->pd_curbody->l_line;
 			else
 				pd->pd_curptr = NULL;
 		} else {

@@ -1,4 +1,4 @@
-/* $Id: acl.c,v 1.102 2012/02/21 05:53:43 manu Exp $ */
+/* $Id: acl.c,v 1.103 2012/02/24 16:40:08 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2012 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: acl.c,v 1.102 2012/02/21 05:53:43 manu Exp $");
+__RCSID("$Id: acl.c,v 1.103 2012/02/24 16:40:08 manu Exp $");
 #endif
 #endif
 
@@ -2078,7 +2078,7 @@ mg_log(LOG_DEBUG, "===> %s", ap->ap_addheader);
 		iptostring(sa, salen, addrstr, sizeof(addrstr));
 		mg_log(LOG_DEBUG, "Mail from=%s, rcpt=%s, addr=%s[%s] "
 		    "is matched by entry %s", priv->priv_from, 
-		    (priv->priv_cur_rcpt) ? priv->priv_cur_rcpt : "(nil)",
+		    (priv->priv_cur_rcpt[0] != '\0') ? priv->priv_cur_rcpt : "(nil)",
 		    priv->priv_hostname, addrstr, 
 		    acl_entry(aclstr, HDRLEN, acl));
 	}
@@ -2268,7 +2268,7 @@ acl_filter(stage, ctx, priv)
 			ADD_REASON(whystr, tmpstr);
 		}
 		if (retval & EXF_RCPT) {
-			if (cur_rcpt != NULL) {
+			if (cur_rcpt[0] != '\0') {
 				snprintf(tmpstr, sizeof(tmpstr),
 				     "recipient %s is whitelisted", cur_rcpt);
 			} else {
@@ -2321,7 +2321,7 @@ acl_filter(stage, ctx, priv)
 		aclstr = fstring_expand(priv, NULL, "%a");
 		snprintf(tmpstr, sizeof(tmpstr),
 		    "(from=%s, rcpt=%s, addr=%s[%s]) ACL %s", from, 
-		    (cur_rcpt != NULL) ? cur_rcpt : "(nil)",
+		    (cur_rcpt[0] != '\0') ? cur_rcpt : "(nil)",
 		    hostname, addrstr, aclstr);
 		free(aclstr);
 		ADD_REASON(whystr, tmpstr);

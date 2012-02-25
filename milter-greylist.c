@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.243 2012/02/21 05:53:44 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.244 2012/02/25 02:38:13 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2012 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.243 2012/02/21 05:53:44 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.244 2012/02/25 02:38:13 manu Exp $");
 #endif
 #endif
 
@@ -806,12 +806,14 @@ real_header(ctx, name, value)
 	char *name;
 	char *value;
 {
-	sfsistat stat;
 	struct line *l;
 	struct mlfi_priv *priv;
 	const char sep[] = ": ";
 	const char crlf[] = "\r\n";
 	size_t len;
+#ifdef USE_DKIM
+	sfsistat stat = SMFIS_CONTINUE;
+#endif /* USE_DKIM */
 
 	if ((priv = (struct mlfi_priv *) smfi_getpriv(ctx)) == NULL) {
 		mg_log(LOG_ERR, "Internal error: smfi_getpriv() returns NULL");
@@ -848,8 +850,6 @@ real_header(ctx, name, value)
 
 	TAILQ_INSERT_TAIL(&priv->priv_header, l, l_list);
 
-	stat = SMFIS_CONTINUE;
-
 #ifdef USE_DKIM
 	if ((stat = dkimcheck_header(name, value, priv)) != SMFIS_CONTINUE)
 		return stat;
@@ -883,18 +883,18 @@ real_body(ctx, chunk, size)
 	unsigned char *chunk;
 	size_t size;
 {
-	sfsistat stat;
 	struct mlfi_priv *priv;
 	struct line *l;
 	size_t linelen;
 	int i;
+#ifdef USE_DKIM
+	sfsistat stat = SMFIS_CONTINUE;
+#endif /* USE_DKIM */
 
 	if ((priv = (struct mlfi_priv *) smfi_getpriv(ctx)) == NULL) {
 		mg_log(LOG_ERR, "Internal error: smfi_getpriv() returns NULL");
 		return SMFIS_TEMPFAIL;
 	}
-
-	stat = SMFIS_CONTINUE;
 
 #ifdef USE_DKIM
 	if ((stat = dkimcheck_body(chunk, size, priv)) != SMFIS_CONTINUE)
@@ -985,7 +985,6 @@ real_eom(ctx)
 	SMFICTX *ctx;
 {
 	struct mlfi_priv *priv;
-	sfsistat stat;
 	char whystr [HDRLEN + 1];
 	struct smtp_reply rcpt_sr;
 	struct rcpt *rcpt;
@@ -993,6 +992,9 @@ real_eom(ctx)
 	int envrcpt_continue = 0;
 	int accept = 1;
 	struct tuple_fields tuple;
+#ifdef USE_DKIM
+	sfsistat stat = SMFIS_CONTINUE;
+#endif /* USE_DKIM */
 
 	if ((priv = (struct mlfi_priv *) smfi_getpriv(ctx)) == NULL) {
 		mg_log(LOG_ERR, "Internal error: smfi_getpriv() returns NULL");
@@ -1023,8 +1025,6 @@ real_eom(ctx)
 
 		TAILQ_INSERT_TAIL(&priv->priv_body, l, l_list);
 	}
-
-	stat = SMFIS_CONTINUE;
 
 #ifdef USE_DKIM
 	if ((stat = dkimcheck_eom(priv)) != SMFIS_CONTINUE)

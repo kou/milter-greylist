@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.244 2012/02/25 02:38:13 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.245 2012/02/25 16:02:58 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2012 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.244 2012/02/25 02:38:13 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.245 2012/02/25 16:02:58 manu Exp $");
 #endif
 #endif
 
@@ -2206,6 +2206,9 @@ log_and_report_greylisting(ctx, priv, rcpt)
 }
 
 #ifdef	USE_DRAC
+#ifndef O_SHLOCK
+#define O_SHLOCK 0
+#endif /* O_SHLOCK */
 static int
 check_drac(dotted_ip)
 	char *dotted_ip;

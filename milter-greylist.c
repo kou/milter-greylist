@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.245 2012/02/25 16:02:58 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.246 2012/02/27 01:38:45 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2012 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.245 2012/02/25 16:02:58 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.246 2012/02/27 01:38:45 manu Exp $");
 #endif
 #endif
 
@@ -2245,7 +2245,7 @@ check_drac(dotted_ip)
 		break;
 
 	default:
-		mg_log(LOG_ERR, "check_drack: errno=%d", errno);
+		mg_log(LOG_ERR, "check_drac: errno=%d", errno);
 		break;
 	}
 

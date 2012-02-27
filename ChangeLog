@@ -1,4 +1,7 @@
-4.4
+4.4a2
+	Build fixes
+	Fix corrupted log output
+4.4a1
 	Typo fixes in man pages (Bernhard Schneider)
 	localaddr option so that Postifix user can use spf self
 	Allow filtering header and body against LDAP or CURL gathered properties

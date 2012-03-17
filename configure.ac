@@ -1,4 +1,4 @@
-# $Id: configure.ac,v 1.262 2012/02/27 01:59:13 manu Exp $
+# $Id: configure.ac,v 1.263 2012/03/17 13:38:45 manu Exp $
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
@@ -265,7 +265,7 @@ AC_ARG_WITH(libdkim,
 	[  --with-libdkim=DIR  Find Sendmail's libdkim in DIR],
 	[LDFLAGS=$LDFLAGS" -L$withval/lib -Wl,$rpath$withval/lib"
 	    CFLAGS=$CFLAGS" -I$withval/include"
-	    AC_CHECK_LIB([dkim -lsm -lcrypto], dkim_init, [
+	    AC_CHECK_LIB([dkim -lcrypto], dkim_init, [
 		SAVEDLDFLAGS=$LDFLAGS
 		SAVEDCFLAGS=$CFLAGS
 		LIBS=$LIBS" -ldkim -lcrypto"

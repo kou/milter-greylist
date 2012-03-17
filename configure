@@ -5490,13 +5490,13 @@ SAVEDCFLAGS=$CFLAGS
 if test "${with_libdkim+set}" = set; then :
   withval=$with_libdkim; LDFLAGS=$LDFLAGS" -L$withval/lib -Wl,$rpath$withval/lib"
 	    CFLAGS=$CFLAGS" -I$withval/include"
-	    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dkim_init in -ldkim -lsm -lcrypto" >&5
-$as_echo_n "checking for dkim_init in -ldkim -lsm -lcrypto... " >&6; }
-if test "${ac_cv_lib_dkim__lsm__lcrypto_dkim_init+set}" = set; then :
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dkim_init in -ldkim -lcrypto" >&5
+$as_echo_n "checking for dkim_init in -ldkim -lcrypto... " >&6; }
+if test "${ac_cv_lib_dkim__lcrypto_dkim_init+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-ldkim -lsm -lcrypto  $LIBS"
+LIBS="-ldkim -lcrypto  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -5516,17 +5516,17 @@ return dkim_init ();
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_dkim__lsm__lcrypto_dkim_init=yes
+  ac_cv_lib_dkim__lcrypto_dkim_init=yes
 else
-  ac_cv_lib_dkim__lsm__lcrypto_dkim_init=no
+  ac_cv_lib_dkim__lcrypto_dkim_init=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_dkim__lsm__lcrypto_dkim_init" >&5
-$as_echo "$ac_cv_lib_dkim__lsm__lcrypto_dkim_init" >&6; }
-if test "x$ac_cv_lib_dkim__lsm__lcrypto_dkim_init" = x""yes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_dkim__lcrypto_dkim_init" >&5
+$as_echo "$ac_cv_lib_dkim__lcrypto_dkim_init" >&6; }
+if test "x$ac_cv_lib_dkim__lcrypto_dkim_init" = x""yes; then :
 
 		SAVEDLDFLAGS=$LDFLAGS
 		SAVEDCFLAGS=$CFLAGS

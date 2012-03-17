@@ -1,3 +1,5 @@
+4.4a3
+	buildmx and builddkim for RPM, fix libm dependency (Rudy Eschauzier)
 4.4a2
 	Build fixes
 	Fix corrupted log output

@@ -1,5 +1,5 @@
 .\"
-.\" $Id: greylist.conf.5,v 1.110 2012/02/21 05:53:44 manu Exp $
+.\" $Id: greylist.conf.5,v 1.111 2012/05/05 00:42:32 manu Exp $
 .\"
 .\" Copyright (c) 2004-2012 Emmanuel Dreyfus
 .\" All rights reserved.
@@ -272,7 +272,7 @@ follow the format described in
 .B re_format(7)\fR.
 Here is an example:
 .PP
-  racl greylist rcpt /.*@example\\.net/
+  racl greylist rcpt /@example\\.net$/
 .PP
 When regular expressions are not used,
 .I from\fR,
@@ -421,11 +421,11 @@ racl whitelist default
 Example 3:
 .nf
 
-racl whitelist rcpt /.*@.*otherdomain\\.org/
+racl whitelist rcpt /@.*otherdomain\\.org$/
 racl whitelist addr 192.168.42.0/24 rcpt user1@mydomain.org
-racl whitelist from friend@example.net rcpt /.*@.*mydomain\\.org/
+racl whitelist from friend@example.net rcpt /@.*mydomain\\.org$/
 racl whitelist rcpt user2@mydomain.org
-racl greylist rcpt /.*@.*mydomain\\.org/
+racl greylist rcpt /@.*mydomain\\.org$/
 racl whitelist default
 .fi
 .SH DATA-STAGE ACL

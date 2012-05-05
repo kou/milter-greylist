@@ -1,9 +1,9 @@
-# $Id: README,v 1.66 2009/09/07 12:56:54 manu Exp $
+# $Id: README,v 1.67 2012/05/05 00:42:32 manu Exp $
 ###########################################################################
 
 		     ======================================
 		       milter-greylist installation notes 
-		       $Date: 2009/09/07 12:56:54 $
+		       $Date: 2012/05/05 00:42:32 $
 		     ======================================
 
 		       Emmanuel Dreyfus <manu@netbsd.org>
@@ -280,7 +280,7 @@ If your mail server handles several domains and you want to enable
 milter-greylist for a whole domain but not for everyone, this is 
 possible, just use a regular expression:
 
-racl greylist rcpt /.*@example\.net/
+racl greylist rcpt /@example\.net$/
 racl whitelist default
 
 
@@ -290,7 +290,7 @@ racl whitelist default
 It is possible to have per-ACL greylisting and autowhitelisting
 settings:
 
-racl greylist rcpt /.*@example\.net/ delay 15m autowhite 3d
+racl greylist rcpt /@example\.net$/ delay 15m autowhite 3d
 racl greylist default delay 30m autowhite 1d
 
 Here, all messages to domain example.net will have a greylisting delay

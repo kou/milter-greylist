@@ -1,5 +1,5 @@
 .\"
-.\" $Id: greylist.conf.5,v 1.111 2012/05/05 00:42:32 manu Exp $
+.\" $Id: greylist.conf.5,v 1.112 2012/06/13 08:13:02 manu Exp $
 .\"
 .\" Copyright (c) 2004-2012 Emmanuel Dreyfus
 .\" All rights reserved.
@@ -216,12 +216,13 @@ This is used to test SPF status. Possible values are
 .I pass\fR,
 .I softfail\fR,
 .I fail\fR,
+.I neutral\fR,
 .I unknown\fR,
 .I error\fR,
 .I none\fR,
 and
 .I self\fR.
-The first six values are plain SPF validation status. The 
+The first seven values are plain SPF validation status. The 
 .I self
 value is a special test that checks the server's local IP address against the
 sender's SPF record. If that test validates, odds are good that the sender

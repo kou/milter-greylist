@@ -1,7 +1,7 @@
 4.4a3
 	buildmx and builddkim for RPM, fix libsm dependency (Rudy Eschauzier)
 	Improve regex examples in documentation (Denis Solovyov)
-	Documentation fix on SPF (Attila Bruncsak)
+	Documentation fix on SPF (Attila Bruncsak) 
 4.4a2
 	Build fixes
 	Fix corrupted log output

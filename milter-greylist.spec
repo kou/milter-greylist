@@ -1,7 +1,7 @@
-# $Id: milter-greylist.spec,v 1.121 2012/03/17 13:38:45 manu Exp $
+# $Id: milter-greylist.spec,v 1.122 2012/09/11 04:29:19 manu Exp $
 # Contributed by Ivan F. Martinez
 
-%define ver 4.4a2
+%define ver 4.4a3
 %define rel 1
 
 %define user grmilter
@@ -203,6 +203,11 @@ fi
 %attr(0600,%{user},root) %ghost %{_localstatedir}/milter-greylist/greylist.db
 
 %changelog
+* Mon Sep 10 2012 Murty Rompalli <murty@solar.murty.net>
+- Mkdir parent dir for pidfile/socket/dumpfile
+- Add helpful error message if mkdir fails
+- Fix duplicate logging when run with -D via systemd
+
 * Fri Mar 16 2012 Rudy Eschauzier <reschauzier@yahoo.com>
 - added build_libdkim and build_mx support
 

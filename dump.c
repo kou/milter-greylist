@@ -1,4 +1,4 @@
-/* $Id: dump.c,v 1.41 2009/10/31 21:28:03 manu Exp $ */
+/* $Id: dump.c,v 1.42 2012/09/11 04:29:19 manu Exp $ */
 
 /*
  * Copyright (c) 2004 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: dump.c,v 1.41 2009/10/31 21:28:03 manu Exp $");
+__RCSID("$Id: dump.c,v 1.42 2012/09/11 04:29:19 manu Exp $");
 #endif
 #endif
 
@@ -54,6 +54,7 @@ __RCSID("$Id: dump.c,v 1.41 2009/10/31 21:28:03 manu Exp $");
 #include <sysexits.h>
 #include <syslog.h>
 #include <time.h>
+#include <libgen.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -228,6 +229,7 @@ dump_perform(final)
 	 * even if the machine crashes, we will not 
 	 * loose both files.
 	 */
+	mkparentdir(conf.c_dumpfile, 0755);
 	snprintf(newdumpfile, MAXPATHLEN, 
 	    "%s-XXXXXXXX", conf.c_dumpfile);
 

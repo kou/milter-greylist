@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.246 2012/02/27 01:38:45 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.247 2012/09/11 04:29:19 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2012 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.246 2012/02/27 01:38:45 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.247 2012/09/11 04:29:19 manu Exp $");
 #endif
 #endif
 
@@ -53,6 +53,7 @@ __RCSID("$Id: milter-greylist.c,v 1.246 2012/02/27 01:38:45 manu Exp $");
 #include <stdarg.h>
 #include <signal.h>
 #include <string.h>
+#include <libgen.h>
 
 /* On IRIX, <unistd.h> defines a EX_OK that clashes with <sysexits.h> */
 #ifdef EX_OK
@@ -1726,6 +1727,12 @@ main(argc, argv)
 		exit(EX_UNAVAILABLE);
 	}
 
+        /* 
+	 * Create directory before creating socket each time, 
+	 * just in case we use tmpfs for sockets
+	 */
+	mkparentdir(conf.c_socket, 0755);
+
 	if (smfi_opensocket(1) == MI_FAILURE) {
 		mg_log(LOG_ERR, "%s: failed to open socket: %s",
 		       argv[0], conf.c_socket);
@@ -1915,6 +1922,40 @@ usage(progname)
 	exit(EX_USAGE);
 }
 
+void
+mkparentdir(path, mode)
+	char *path;
+	mode_t mode;
+{
+	char *parent;
+
+	if ((parent = strdup(path)) == NULL) {
+		mg_log(LOG_ERR, "strdup(\"%s\") failed", path);
+		exit(EX_OSERR);
+	}
+
+	parent = dirname(parent);
+
+	if ((strcmp(parent, ".") == 0) ||
+	    (strcmp(parent, "..") == 0) ||
+	    (strcmp(parent, "") == 0) ||
+	    (strcmp(parent, "/") == 0))
+		goto out;
+
+	if (access(path, F_OK) != -1 || access(parent, F_OK) != -1)
+		goto out;
+
+	if (mkdir(parent, mode) == -1 || access(parent, F_OK) == -1) {
+		mg_log(LOG_ERR, "mkdir(\"%s\") failed", parent);
+		exit(EX_OSERR);
+	}
+
+out:
+	free(parent);
+
+	return;
+}
+
 static void
 cleanup_sock(path)
 	char *path;
@@ -2070,6 +2111,7 @@ writepid(pidfile)
 	FILE *stream;
 
 	errno = 0;
+	mkparentdir(pidfile, 0755);
 	if ((stream = Fopen(pidfile, "w")) == NULL) {
 		mg_log(LOG_ERR, "Cannot open pidfile \"%s\" for writing: %s", 
 		    pidfile, 
@@ -2358,31 +2400,32 @@ vsyslog(level, fmt, ap)
 void
 mg_log(int level, char *fmt, ...) {
 	va_list ap;
+	int logfac;
 
-	if (conf_cold || nodetach) {
+	if (!GET_CONF()) {
+		conf_retain();
+		logfac = conf.c_logfac;
+		conf_release();
+	} else {
+		logfac = conf.c_logfac;
+	}
+
+	if (logfac == -1) {
+		return;
+	}
+
+/*	if (conf_cold || nodetach) { */
+	if (conf_cold) {
 		va_start(ap, fmt);
 		vfprintf(stderr, fmt, ap);
 		fprintf(stderr, "\n");
 		va_end(ap);
+		return;
 	}
 
-	if (!conf_cold) {
-		int logfac;
-		if (!GET_CONF()) {
-			conf_retain();
-			logfac = conf.c_logfac;
-			conf_release();
-		} else {
-			logfac = conf.c_logfac;
-		}
-		if (logfac == -1) {
-			return;
-		}
-		va_start(ap, fmt);
-		vsyslog(logfac | level, fmt, ap);
-		va_end(ap);
-	}
-
+	va_start(ap, fmt);
+	vsyslog(logfac | level, fmt, ap);
+	va_end(ap);
 	return;
 }
 

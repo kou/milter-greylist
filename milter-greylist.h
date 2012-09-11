@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.h,v 1.89 2012/02/21 05:53:44 manu Exp $ */
+/* $Id: milter-greylist.h,v 1.90 2012/09/11 04:29:19 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2012 Emmanuel Dreyfus
@@ -263,6 +263,7 @@ char *strncpy_rmsp(char *, char *, size_t);
 char *fstring_expand(struct mlfi_priv *, 
     char *, const char *);
 char *fstring_escape(char *);
+void mkparentdir(char *, mode_t);
 
 #ifdef HAVE_STRLCAT
 /* #include <string.h> */

@@ -2,6 +2,9 @@
 	buildmx and builddkim for RPM, fix libsm dependency (Rudy Eschauzier)
 	Improve regex examples in documentation (Denis Solovyov)
 	Documentation fix on SPF (Attila Bruncsak) 
+	Mkdir parent dir for pidfile/socket/dumpfile
+	Add helpful error message if mkdir fails
+	Fix duplicate logging when run with -D via systemd
 4.4a2
 	Build fixes
 	Fix corrupted log output

@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.247 2012/09/11 04:29:19 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.248 2012/09/16 05:42:09 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2012 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.247 2012/09/11 04:29:19 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.248 2012/09/16 05:42:09 manu Exp $");
 #endif
 #endif
 
@@ -1928,13 +1928,14 @@ mkparentdir(path, mode)
 	mode_t mode;
 {
 	char *parent;
+	char *pathcp;
 
-	if ((parent = strdup(path)) == NULL) {
+	if ((pathcp = strdup(path)) == NULL) {
 		mg_log(LOG_ERR, "strdup(\"%s\") failed", path);
 		exit(EX_OSERR);
 	}
 
-	parent = dirname(parent);
+	parent = dirname(pathcp);
 
 	if ((strcmp(parent, ".") == 0) ||
 	    (strcmp(parent, "..") == 0) ||
@@ -1951,7 +1952,7 @@ mkparentdir(path, mode)
 	}
 
 out:
-	free(parent);
+	free(pathcp);
 
 	return;
 }
@@ -2402,6 +2403,14 @@ mg_log(int level, char *fmt, ...) {
 	va_list ap;
 	int logfac;
 
+	if (conf_cold) {
+		va_start(ap, fmt);
+		vfprintf(stderr, fmt, ap);
+		fprintf(stderr, "\n");
+		va_end(ap);
+		return;
+	}
+
 	if (!GET_CONF()) {
 		conf_retain();
 		logfac = conf.c_logfac;
@@ -2411,15 +2420,6 @@ mg_log(int level, char *fmt, ...) {
 	}
 
 	if (logfac == -1) {
-		return;
-	}
-
-/*	if (conf_cold || nodetach) { */
-	if (conf_cold) {
-		va_start(ap, fmt);
-		vfprintf(stderr, fmt, ap);
-		fprintf(stderr, "\n");
-		va_end(ap);
 		return;
 	}
 

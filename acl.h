@@ -1,4 +1,4 @@
-/* $Id: acl.h,v 1.49 2012/02/21 05:53:43 manu Exp $ */
+/* $Id: acl.h,v 1.50 2012/09/19 02:04:38 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2012 Emmanuel Dreyfus
@@ -61,6 +61,7 @@ typedef enum {
 	AC_EMAIL,
 	AC_REGEX,
 	AC_STRING,
+	AC_STRING_PROP,
 	AC_HELO,
 	AC_HELO_RE,
 	AC_HELO_LIST,
@@ -104,7 +105,9 @@ typedef enum {
 	AC_SPF,
 	AC_DKIM,
 	AC_MSGSIZE,
+	AC_MSGSIZE_PROP,
 	AC_RCPTCOUNT,
+	AC_RCPTCOUNT_PROP,
 	AC_CLOCKSPEC,
 	AC_CLOCKSPEC_LIST,
 	AC_GEOIP,
@@ -114,6 +117,7 @@ typedef enum {
 	AC_P0F_LIST,
 	AC_SA,
 	AC_SASCORE,
+	AC_SASCORE_PROP,
 	AC_TARPIT,
 	AC_RATELIMIT,
 } acl_clause_t;
@@ -159,6 +163,7 @@ struct acl_param {
 	char *ap_report;
 	char *ap_addheader;
 	char *ap_addfooter;
+	char *ap_subjtag;
 	int ap_maxpeek;
 	int ap_nmatch;
 	char **ap_pmatch;
@@ -175,6 +180,7 @@ struct acl_param {
 #define A_NOLOG			0x080
 #define A_FREE_ADDHEADER	0x100
 #define A_FREE_ADDFOOTER	0x200
+#define A_FREE_SUBJTAG		0x400
 
 struct all_list_entry;
 
@@ -202,6 +208,7 @@ typedef union acl_data {
 #endif
 #if defined(USE_CURL) || defined(USE_LDAP)
 	struct prop_data *prop;
+	struct acl_opnum_prop *aonp;
 #endif
 	struct acl_opnum_data opnum;
 	struct clockspec *clockspec;
@@ -261,6 +268,7 @@ struct acl_entry {
 	char *a_report;
 	char *a_addheader;
 	char *a_addfooter;
+	char *a_subjtag;
 	int a_maxpeek;
 	TAILQ_ENTRY(acl_entry) a_list;
 };
@@ -288,6 +296,7 @@ void acl_add_msg(char *);
 void acl_add_report(char *);
 void acl_add_addheader(char *);
 void acl_add_addfooter(char *);
+void acl_add_subjtag(char *);
 void acl_add_maxpeek(int);
 void acl_maxpeek_fixup(int);
 struct acl_entry *acl_register_entry_first(acl_stage_t, acl_type_t);

@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.h,v 1.90 2012/09/11 04:29:19 manu Exp $ */
+/* $Id: milter-greylist.h,v 1.91 2012/09/19 02:04:38 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2012 Emmanuel Dreyfus
@@ -169,6 +169,7 @@ struct smtp_reply {
 	char *sr_report_x;
 	char *sr_addheader;
 	char *sr_addfooter;
+	char *sr_subjtag;
 	sfsistat sr_retcode;
 	int sr_nmatch;
 	char **sr_pmatch;

@@ -1,4 +1,4 @@
-/* $Id: acl.c,v 1.103 2012/02/24 16:40:08 manu Exp $ */
+/* $Id: acl.c,v 1.104 2012/09/19 02:04:38 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2012 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: acl.c,v 1.103 2012/02/24 16:40:08 manu Exp $");
+__RCSID("$Id: acl.c,v 1.104 2012/09/19 02:04:38 manu Exp $");
 #endif
 #endif
 
@@ -371,10 +371,22 @@ struct acl_clause_rec acl_clause_rec[] = {
 	  AT_OPNUM, AC_NONE, AC_MSGSIZE, EXF_MSGSIZE,
 	  acl_print_opnum, acl_add_opnum,
 	  NULL, acl_msgsize_cmp },
+#if defined(USE_CURL) || defined(USE_LDAP)
+	{ AC_MSGSIZE_PROP, MULTIPLE_OK, AS_DATA, "msgsize_prop", 
+	  AT_OPNUM, AC_NONE, AC_STRING_PROP, EXF_MSGSIZE,
+	  prop_opnum_print, prop_opnum_add,
+	  prop_opnum_free, prop_opnum_validate },
+#endif
 	{ AC_RCPTCOUNT, MULTIPLE_OK, AS_ANY, "rcptcount", 
 	  AT_OPNUM, AC_NONE, AC_RCPTCOUNT, EXF_RCPTCOUNT,
 	  acl_print_opnum, acl_add_opnum_body,
 	  NULL, acl_rcptcount_cmp },
+#if defined(USE_CURL) || defined(USE_LDAP)
+	{ AC_RCPTCOUNT_PROP, MULTIPLE_OK, AS_DATA, "rcptcount_prop", 
+	  AT_OPNUM, AC_NONE, AC_STRING_PROP, EXF_RCPTCOUNT,
+	  acl_print_prop_string, acl_add_prop_string,
+	  acl_free_prop_string, prop_opnum_validate },
+#endif
 	{ AC_CLOCKSPEC, MULTIPLE_OK, AS_ANY, "time",
 	  AT_CLOCKSPEC, AC_NONE, AC_CLOCKSPEC, EXF_CLOCKSPEC,
 	  print_clockspec, add_clockspec,
@@ -414,7 +426,13 @@ struct acl_clause_rec acl_clause_rec[] = {
 	{ AC_SASCORE, MULTIPLE_OK, AS_DATA, "spamd score",
 	  AT_OPNUM, AC_NONE, AC_NONE,  EXF_SA,
 	  acl_print_opnum, acl_add_opnum, NULL, spamd_score },
-#endif
+#if defined(USE_CURL) || defined(USE_LDAP)
+	{ AC_SASCORE_PROP, MULTIPLE_OK, AS_DATA, "sascore_prop", 
+	  AT_OPNUM, AC_NONE, AC_STRING_PROP, EXF_SA,
+	  acl_print_prop_string, acl_add_prop_string,
+	  acl_free_prop_string, prop_opnum_validate },
+#endif /* USE_CURL || USE_LDAP */
+#endif /* USE_SPAMD */
 #ifdef HAVE_DATA_CALLBACK
 	{ AC_TARPIT, UNIQUE, AS_ANY, "tarpit",
 	  AT_TIME, AC_NONE, AC_NONE, EXF_TARPIT,
@@ -1277,6 +1295,8 @@ acl_free_entry(acl)
 		free(acl->a_addheader);
 	if (acl->a_addfooter != NULL)
 		free(acl->a_addfooter);
+	if (acl->a_subjtag != NULL)
+		free(acl->a_subjtag);
 	free(acl);
 
 	return;
@@ -2020,7 +2040,6 @@ acl_actions(priv, stage, acl, ap, retval)
 		}
 	}
 	if (ap->ap_addheader) {
-mg_log(LOG_DEBUG, "===> %s", ap->ap_addheader);
 		priv->priv_sr.sr_addheader = strdup(ap->ap_addheader);
 		if (priv->priv_sr.sr_addheader == NULL) {
 			mg_log(LOG_ERR, "strdup failed");
@@ -2034,6 +2053,13 @@ mg_log(LOG_DEBUG, "===> %s", ap->ap_addheader);
 			exit(EX_OSERR);
 		}
 		(void)fstring_escape(priv->priv_sr.sr_addfooter);
+	}
+	if (ap->ap_subjtag) {
+		priv->priv_sr.sr_subjtag = strdup(ap->ap_subjtag);
+		if (priv->priv_sr.sr_subjtag == NULL) {
+			mg_log(LOG_ERR, "strdup failed");
+			exit(EX_OSERR);
+		}
 	}
 
 	if (stage == AS_RCPT)
@@ -2057,6 +2083,8 @@ mg_log(LOG_DEBUG, "===> %s", ap->ap_addheader);
 		free(ap->ap_addheader);
 	if (ap->ap_flags & A_FREE_ADDFOOTER)
 		free(ap->ap_addfooter);
+	if (ap->ap_flags & A_FREE_SUBJTAG)
+		free(ap->ap_subjtag);
 
 	if (ap->ap_flags & A_FLUSHADDR) {
 		struct tuple_fields tuple;
@@ -2158,6 +2186,7 @@ acl_filter(stage, ctx, priv)
 		ap.ap_report = acl->a_report;
 		ap.ap_addheader = acl->a_addheader;
 		ap.ap_addfooter = acl->a_addfooter;
+		ap.ap_subjtag = acl->a_subjtag;
 		ap.ap_maxpeek = acl->a_maxpeek;
 
 		/*
@@ -2537,6 +2566,11 @@ acl_entry(entrystr, len, acl)
 		    "[addfooter \"%s\"] ", acl->a_addfooter);
 		mystrlcat(entrystr, tempstr, len);
 	}
+	if (acl->a_subjtag) {
+		snprintf(tempstr, sizeof(tempstr), 
+		    "[subjtag \"%s\"] ", acl->a_subjtag);
+		mystrlcat(entrystr, tempstr, len);
+	}
 	if (acl->a_maxpeek) {
 		snprintf(tempstr, sizeof(tempstr), 
 		    "[maxpeek %d] ", acl->a_maxpeek);
@@ -2842,6 +2876,28 @@ acl_add_addfooter(hdr)
 		
 	if (conf.c_debug || conf.c_acldebug)
 		mg_log(LOG_DEBUG, "load acl addfooter \"%s\"", hdr);
+
+	return;
+}
+
+void 
+acl_add_subjtag(tag)
+	char *tag;
+{
+	if (gacl->a_subjtag) {
+		mg_log(LOG_ERR,
+		    "subjtag specified twice in ACL line %d", conf_line);
+		exit(EX_DATAERR);
+	}
+
+	if ((gacl->a_subjtag = strdup(tag)) == NULL) {
+		mg_log(LOG_ERR,
+		    "malloc failed in ACL line %d", conf_line);
+		exit(EX_OSERR);
+	}
+		
+	if (conf.c_debug || conf.c_acldebug)
+		mg_log(LOG_DEBUG, "load acl subjtag \"%s\"", tag);
 
 	return;
 }

@@ -1,4 +1,4 @@
-/* $Id: prop.c,v 1.8 2012/02/21 05:53:44 manu Exp $ */
+/* $Id: prop.c,v 1.9 2012/09/19 02:04:38 manu Exp $ */
 
 /*
  * Copyright (c) 2006-2012 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: prop.c,v 1.8 2012/02/21 05:53:44 manu Exp $");
+__RCSID("$Id: prop.c,v 1.9 2012/09/19 02:04:38 manu Exp $");
 #endif
 #endif
 
@@ -158,6 +158,122 @@ prop_string_validate(ad, stage, ap, priv)
 	}
 
 	free(string);	
+	return retval;
+}
+
+void
+prop_opnum_add(ad, data)
+	acl_data_t *ad;
+	void *data;
+{
+	struct acl_opnum_prop *aonp;
+
+	aonp = (struct acl_opnum_prop *)data;
+
+	if ((ad->aonp = malloc(sizeof(*ad->aonp))) == NULL) {
+		mg_log(LOG_ERR, "malloc() failed");
+		exit(EX_OSERR);
+	}
+
+	ad->aonp->aonp_op = aonp->aonp_op;
+	ad->aonp->aonp_type = aonp->aonp_type;
+	if ((ad->aonp->aonp_name = strdup(aonp->aonp_name)) == NULL) {
+		mg_log(LOG_ERR, "strdup() failed");
+		exit(EX_OSERR);
+	}
+
+	return;
+}
+
+void
+prop_opnum_free(ad)
+	acl_data_t *ad;
+{
+	free(ad->aonp->aonp_name);
+	free(ad->aonp);
+	return;
+}
+
+
+char *
+prop_opnum_print(ad, buf, len)
+	acl_data_t *ad;
+	char *buf;
+	size_t len;
+{
+	struct {
+		enum operator op;
+		char *str;
+	} op_to_str[] = {
+		{ OP_EQ, "==" },
+		{ OP_NE, "!=" },
+		{ OP_GT, ">" },
+		{ OP_LT, "<" },
+		{ OP_GE, ">=" },
+		{ OP_LE, "<=" },
+	};
+	int i;
+	char *str = NULL;
+
+	for (i = 0; i < sizeof(op_to_str) / sizeof(*op_to_str); i++) {
+		if (op_to_str[i].op == ad->aonp->aonp_op) {
+			str = op_to_str[i].str;
+			break;
+		}
+	}
+	if (str == NULL) {
+		mg_log(LOG_ERR, "unexpected operator");
+		exit(EX_SOFTWARE);
+	}
+
+	snprintf(buf, len, "%s $%s", str, ad->aonp->aonp_name);
+
+	return buf;
+}
+
+int 
+prop_opnum_validate(ad, stage, ap, priv)
+	acl_data_t *ad;
+	acl_stage_t stage;
+	struct acl_param *ap;
+	struct mlfi_priv *priv; 
+{
+	struct prop *up;
+	struct acl_opnum_prop *aonp;
+	int val1, val2;
+	int retval = 0;
+
+	aonp = ad->aonp;
+	LIST_FOREACH(up, &priv->priv_prop, up_list) {
+		if (strcasecmp(up->up_name, aonp->aonp_name) != 0)
+			continue;
+
+		if (conf.c_debug)
+			mg_log(LOG_DEBUG, "test $%s = \"%s\" vs \"%s\"",
+			    up->up_name, up->up_value, aonp->aonp_name);
+	
+		switch (aonp->aonp_type) {
+		case AONP_MSGSIZE:
+			val1 = priv->priv_msgcount;
+			break;
+		case AONP_RCPTCOUNT:
+			val1 = priv->priv_rcptcount;
+			break;
+#ifdef USE_SPAMD
+		case AONP_SPAMD:
+			val1 = priv_spamd_score10;
+			break;
+#endif /* USE_SPAMD */
+		default:
+			mg_log(LOG_ERR, "unexpected aonp_type");
+			exit(EX_SOFTWARE);
+		}
+		val2 = atoi(up->up_value);
+		
+		retval = acl_opnum_cmp(val1, aonp->aonp_op, val2);
+		break;
+	}
+
 	return retval;
 }
 

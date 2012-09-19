@@ -16,7 +16,7 @@
 %token LOGFAC_LOCAL5 LOGFAC_LOCAL6 LOGFAC_LOCAL7 P0F P0FSOCK DKIMCHECK
 %token SPAMDSOCK SPAMDSOCKT SPAMD DOMAINEXACT ADDHEADER NOLOG LDAPBINDDN 
 %token LDAPBINDPW TARPIT TARPIT_SCOPE SESSION COMMAND MX RATELIMIT KEY
-%token DOMATCH DATA LOCALADDR ADDFOOTER CONTINUE FIXLDAPCHECK
+%token DOMATCH DATA LOCALADDR ADDFOOTER CONTINUE FIXLDAPCHECK SUBJTAG
 
 %{
 #include "config.h"
@@ -24,7 +24,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: conf_yacc.y,v 1.117 2012/02/21 05:53:44 manu Exp $");
+__RCSID("$Id: conf_yacc.y,v 1.118 2012/09/19 02:04:38 manu Exp $");
 #endif
 #endif
 
@@ -920,7 +920,9 @@ acl_clause:	helo_clause
 	|	spf_compat_clause
 	|	dkim_clause
 	|	msgsize_clause
+	|	msgsize_prop_clause
 	|	rcptcount_clause
+	|	rcptcount_prop_clause
 	|	no_clause
 	|	time_clause
 	|	geoip_clause
@@ -930,6 +932,7 @@ acl_clause:	helo_clause
 	|	headerprop_clause
 	|	spamd_clause
 	|	spamd_score_clause
+	|	spamd_score_prop_clause
 	|	tarpit_clause
 	;
 
@@ -948,6 +951,7 @@ acl_value:	greylist_value
 	|	nolog_value
 	|	addheader_value
 	|	addfooter_value
+	|	subjtag_value
 	|	maxpeek_value
 	;
 
@@ -1021,6 +1025,12 @@ addfooter_value:	ADDFOOTER QSTRING {
 				acl_add_addfooter(quotepath(hdr, $2, QSTRLEN));
 			}
 	;
+subjtag_value:		SUBJTAG QSTRING {
+				char hdr[QSTRLEN + 1];
+
+				acl_add_subjtag(quotepath(hdr, $2, QSTRLEN));
+			}
+	;
 maxpeek_value:		MAXPEEK TNUMBER {
 				acl_add_maxpeek(atoi($2));
 			}
@@ -1083,6 +1093,24 @@ spamd_score_clause:	SPAMD OP TNUMBER {
 #endif
 			}
 	;
+
+spamd_score_prop_clause:	SPAMD OP PROP {
+#if defined(USE_CURL) || defined(USE_LDAP)
+			struct acl_opnum_prop aonp;
+
+			aonp.aonp_op = $2;
+			aonp.aonp_type = AONP_SPAMD;
+			aonp.aonp_name = $3 + 1; /* + 1 to strip leading $ */
+			acl_add_clause(AC_SASCORE_PROP, &aonp);
+#else
+			acl_drop();
+			mg_log(LOG_INFO, 
+			    "no CURL or LDAP support not compiled in, "
+			    "ignore line %d", conf_line);
+#endif
+		}
+	;
+
 geoip_clause:		GEOIP QSTRING {
 #ifdef USE_GEOIP
 				char ccode[IPADDRSTRLEN + 1];
@@ -1450,6 +1478,23 @@ msgsize_clause:		MSGSIZE OP TNUMBER {
 		}
 	;
 
+msgsize_prop_clause:	MSGSIZE OP PROP {
+#if defined(USE_CURL) || defined(USE_LDAP)
+			struct acl_opnum_prop aonp;
+
+			aonp.aonp_op = $2;
+			aonp.aonp_type = AONP_MSGSIZE;
+			aonp.aonp_name = $3 + 1; /* + 1 to strip leading $ */
+			acl_add_clause(AC_MSGSIZE_PROP, &aonp);
+#else
+			acl_drop();
+			mg_log(LOG_INFO, 
+			    "no CURL or LDAP support not compiled in, "
+			    "ignore line %d", conf_line);
+#endif
+		}
+	;
+
 rcptcount_clause:	RCPTCOUNT OP TNUMBER {
 				struct acl_opnum_data aond;
 
@@ -1460,6 +1505,22 @@ rcptcount_clause:	RCPTCOUNT OP TNUMBER {
 		}
 	;
 
+rcptcount_prop_clause:	RCPTCOUNT OP PROP {
+#if defined(USE_CURL) || defined(USE_LDAP)
+			struct acl_opnum_prop aonp;
+
+			aonp.aonp_op = $2;
+			aonp.aonp_type = AONP_RCPTCOUNT;
+			aonp.aonp_name = $3 + 1; /* + 1 to strip leading $ */
+			acl_add_clause(AC_RCPTCOUNT_PROP, &aonp);
+#else
+			acl_drop();
+			mg_log(LOG_INFO, 
+			    "no CURL or LDAP support not compiled in, "
+			    "ignore line %d", conf_line);
+#endif
+		}
+	;
 
 nodrac:			NODRAC	{ conf.c_nodrac = 1; }
 	;

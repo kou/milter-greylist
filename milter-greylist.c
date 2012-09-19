@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.248 2012/09/16 05:42:09 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.249 2012/09/19 02:04:38 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2012 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.248 2012/09/16 05:42:09 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.249 2012/09/19 02:04:38 manu Exp $");
 #endif
 #endif
 
@@ -149,7 +149,7 @@ struct smfiDesc smfilter =
 {
 	"greylist",	/* filter name */
 	SMFI_VERSION,	/* version code */
-	SMFIF_ADDHDRS|SMFIF_CHGBODY,	/* flags */
+	SMFIF_CHGHDRS|SMFIF_ADDHDRS|SMFIF_CHGBODY,	/* flags */
 	mlfi_connect,	/* connection info filter */
 	mlfi_helo,	/* SMTP HELO command filter */
 	mlfi_envfrom,	/* envelope sender filter */
@@ -1176,6 +1176,54 @@ passed:
 			mg_log(LOG_WARNING, "smfi_replacebody failed");
 
 		free(footer);
+	}
+
+	/* Add subject tag if we have the whole message */
+	if (priv->priv_sr.sr_subjtag && 
+	    (priv->priv_msgcount <= priv->priv_maxpeek)) {
+		const char const subjhdr[] = "Subject: ";
+		size_t subjhdrlen = sizeof(subjhdr) - 1;
+		char *tag;
+		struct line *l;
+		char *oldline;
+
+		tag = fstring_expand(priv, NULL, priv->priv_sr.sr_subjtag);
+		oldline = NULL;
+
+		TAILQ_FOREACH(l, &priv->priv_header, l_list) {
+			if (strncmp(l->l_line, subjhdr, subjhdrlen) == 0) {
+				size_t oldlinelen;
+
+				oldline = l->l_line + sizeof(subjhdr);
+				oldlinelen = strlen(oldline);
+				while (!isprint((int)oldline[oldlinelen]))
+					oldline[oldlinelen--] = '\0';
+				break;
+			}
+		}
+
+		if (oldline && (strstr(oldline, tag) == NULL)) {
+			size_t newlen;
+			char *newline;
+
+			newlen = strlen(tag) + strlen(oldline) + 1;
+			if ((newline = malloc(newlen)) == NULL)
+				mg_log(LOG_ERR, "malloc failed");
+
+			newline[0] = '\0';
+			(void)strcat(newline, tag);
+			(void)strcat(newline, l->l_line);
+
+			free(l->l_line);
+			l->l_line = newline;
+			l->l_len = newlen;
+
+			if (smfi_chgheader(ctx, "Subject", 
+					   1, newline) != MI_SUCCESS)
+				mg_log(LOG_WARNING, "smfi_chgheader failed");
+		} 
+
+		free(tag);
 	}
 
 	/* Restore the info collected from RCPT stage */

@@ -1,4 +1,4 @@
-/* $Id: prop.h,v 1.6 2012/02/21 05:53:44 manu Exp $ */
+/* $Id: prop.h,v 1.7 2012/09/19 02:04:38 manu Exp $ */
 
 /*
  * Copyright (c) 2008-2012 Emmanuel Dreyfus
@@ -39,6 +39,12 @@ struct prop_data {
 	void *upd_data;
 };
 
+struct acl_opnum_prop {
+	enum operator aonp_op;
+	enum { AONP_MSGSIZE, AONP_RCPTCOUNT, AONP_SPAMD } aonp_type;
+	char *aonp_name;
+}; 
+
 struct prop {
 	char *up_name;
 	char *up_value;
@@ -55,6 +61,8 @@ void prop_push(char *, char *, int, struct mlfi_priv *);
 void prop_clear(struct mlfi_priv *, int);
 void prop_untmp(struct mlfi_priv *);
 char *prop_byname(struct mlfi_priv *, char *);
+int prop_opnum_validate(acl_data_t *, acl_stage_t,
+			 struct acl_param *, struct mlfi_priv *); 
 int prop_string_validate(acl_data_t *, acl_stage_t,
 			 struct acl_param *, struct mlfi_priv *); 
 int prop_regex_validate(acl_data_t *, acl_stage_t,
@@ -63,5 +71,9 @@ int prop_body_validate(acl_data_t *, acl_stage_t,
 		       struct acl_param *, struct mlfi_priv *); 
 int prop_header_validate(acl_data_t *, acl_stage_t,
 			 struct acl_param *, struct mlfi_priv *); 
+
+char *prop_opnum_print(acl_data_t *, char *, size_t);     
+void prop_opnum_add(acl_data_t *, void *);
+void prop_opnum_free(acl_data_t *);
 
 #endif /* _PROP_H_ */

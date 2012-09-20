@@ -1,4 +1,4 @@
-/* $Id: ldapcheck.c,v 1.14 2012/02/21 05:53:44 manu Exp $ */
+/* $Id: ldapcheck.c,v 1.15 2012/09/20 08:31:49 manu Exp $ */
 
 /*
  * Copyright (c) 2008-2012 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: ldapcheck.c,v 1.14 2012/02/21 05:53:44 manu Exp $");
+__RCSID("$Id: ldapcheck.c,v 1.15 2012/09/20 08:31:49 manu Exp $");
 #endif
 #endif
 #include <ctype.h>
@@ -343,6 +343,65 @@ ldapcheck_disconnect(lc)
 	return error;
 }
 
+char *
+ldapescape(str)
+	char *str;
+{
+	char *outstr;
+	size_t origlen, len;
+	char *cp;
+	char *dp;
+
+	origlen = strlen(str) + 1;
+	len = origlen;
+	for (cp = str; *cp; cp++) {
+		switch(*cp) {
+		case '?':
+		case '%':
+		case '*':
+		case '(':
+		case ')':
+		case '\\':
+		case '/':
+			len += 2;
+		default:
+			break;
+		}
+	}
+
+	if (len == origlen)
+		return NULL;
+
+	if ((outstr = malloc(len)) == NULL) {
+		mg_log(LOG_ERR, "malloc failed");
+		exit (EX_OSERR);
+	}
+
+	dp = outstr;
+	for (cp = str; *cp; cp++) {
+		switch(*cp) {
+		case '%':
+		case '?':
+			(void)sprintf(dp, "%%%02X", *cp);
+			dp += 3;
+			break;
+		case '*':
+		case '(':
+		case ')':
+		case '\\':
+			(void)sprintf(dp, "\\%02x", *cp);
+			dp += 3;
+			break;
+		default:
+			*dp++ = *cp;
+			break;
+		}
+	}
+
+	*dp = '\0';
+
+	return outstr;
+}
 
 int
 ldapcheck_validate(ad, stage, ap, priv)
@@ -363,10 +422,14 @@ ldapcheck_validate(ad, stage, ap, priv)
 	int retval = -1;
 	int clearprop;
 	int nmatch = 0;
+	char *(*cv)(char *);
 
 	rcpt = priv->priv_cur_rcpt;
 	lce = ad->ldapcheck;
-	url = fstring_expand(priv, rcpt, lce->lce_url);
+	
+	cv = (lce->lce_flags & L_NOESCAPE) ? NULL : *ldapescape;
+	url = fstring_expand(priv, rcpt, lce->lce_url, cv);
+
 	clearprop = lce->lce_flags & L_CLEARPROP;
 
 	if (conf.c_debug) {

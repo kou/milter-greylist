@@ -7,6 +7,8 @@
 	Fix duplicate logging when run with -D via systemd
 	Add subjtag clause in DATA stage ACL to add a tag to message subject
 	Allow comparison of msgsize, rcptcount & spamd, against values from LDAP
+	Format string substitution get %-encoding for urlcheck
+	Format string substitution get \-escapes and %-encoding for ldapcheck
 4.4a2
 	Build fixes
 	Fix corrupted log output

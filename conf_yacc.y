@@ -17,6 +17,7 @@
 %token SPAMDSOCK SPAMDSOCKT SPAMD DOMAINEXACT ADDHEADER NOLOG LDAPBINDDN 
 %token LDAPBINDPW TARPIT TARPIT_SCOPE SESSION COMMAND MX RATELIMIT KEY
 %token DOMATCH DATA LOCALADDR ADDFOOTER CONTINUE FIXLDAPCHECK SUBJTAG
+%token NOENCODE NOESCAPE
 
 %{
 #include "config.h"
@@ -24,7 +25,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: conf_yacc.y,v 1.118 2012/09/19 02:04:38 manu Exp $");
+__RCSID("$Id: conf_yacc.y,v 1.119 2012/09/20 08:31:49 manu Exp $");
 #endif
 #endif
 
@@ -1592,6 +1593,7 @@ ldapcheckdef:	LDAPCHECK QSTRING QSTRING ldapcheckdef_flags {
 
 ldapcheckdef_flags:	ldapcheckdef_flags ldapcheckdef_clear
 		|	ldapcheckdef_flags ldapcheckdef_domatch
+		|	ldapcheckdef_flags ldapcheckdef_noescape
 		|	
 		;
 
@@ -1605,10 +1607,20 @@ ldapcheckdef_clear:	 CLEAR {
 #endif
 			}
 		;
-
 ldapcheckdef_domatch:	 DOMATCH { 
 #ifdef USE_LDAP
 				ldapcheck_gflags |= L_DOMATCH; 
+#else
+			mg_log(LOG_INFO, 
+			    "LDAP support not compiled in, ignore line %d", 
+			    conf_line);
+#endif
+			}
+		;
+
+ldapcheckdef_noescape:	 NOESCAPE { 
+#ifdef USE_LDAP
+				ldapcheck_gflags |= L_NOESCAPE; 
 #else
 			mg_log(LOG_INFO, 
 			    "LDAP support not compiled in, ignore line %d", 
@@ -1635,6 +1647,7 @@ urlcheckdef:	URLCHECK QSTRING QSTRING TNUMBER urlcheckdef_flags {
 
 urlcheckdef_flags:	urlcheckdef_flags urlcheckdef_postmsg
 		|	urlcheckdef_flags urlcheckdef_getprop
+		|	urlcheckdef_flags urlcheckdef_noencode
 		|	urlcheckdef_flags urlcheckdef_getprop urlcheckdef_clear
 		|	urlcheckdef_flags urlcheckdef_fork
 		|
@@ -1643,6 +1656,16 @@ urlcheckdef_flags:	urlcheckdef_flags urlcheckdef_postmsg
 urlcheckdef_postmsg:	POSTMSG	{ 
 #ifdef USE_CURL
 				urlcheck_gflags |= U_POSTMSG; 
+#else
+			mg_log(LOG_INFO, 
+			    "CURL support not compiled in, ignore line %d", 
+			    conf_line);
+#endif
+			}
+		;
+urlcheckdef_noencode:	NOENCODE	{ 
+#ifdef USE_CURL
+				urlcheck_gflags |= U_NOENCODE; 
 #else
 			mg_log(LOG_INFO, 
 			    "CURL support not compiled in, ignore line %d", 

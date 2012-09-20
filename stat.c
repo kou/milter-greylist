@@ -1,4 +1,4 @@
-/* $Id: stat.c,v 1.10 2012/02/21 05:53:44 manu Exp $ */
+/* $Id: stat.c,v 1.11 2012/09/20 08:31:49 manu Exp $ */
 
 /*
  * Copyright (c) 2007-2010 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: stat.c,v 1.10 2012/02/21 05:53:44 manu Exp $");
+__RCSID("$Id: stat.c,v 1.11 2012/09/20 08:31:49 manu Exp $");
 #endif
 #endif
 
@@ -173,12 +173,14 @@ mg_stat(priv, stat)
 
 	if (priv->priv_cur_rcpt[0] == '\0') {
 		LIST_FOREACH(rcpt, &priv->priv_rcpt, r_list) {
-			statlog = fstring_expand(priv, rcpt->r_addr, format);
+			statlog = fstring_expand(priv, rcpt->r_addr,
+						 format, NULL);
 			fprintf(outfp, "%s", statlog);
 			free(statlog);
 		}
 	} else {
-		statlog = fstring_expand(priv, priv->priv_cur_rcpt, format);
+		statlog = fstring_expand(priv, priv->priv_cur_rcpt,
+					 format, NULL);
 		fprintf(outfp, "%s", statlog);
 		free(statlog);
 	}

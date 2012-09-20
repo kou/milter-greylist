@@ -1,4 +1,4 @@
-/* $Id: ratelimit.c,v 1.4 2011/04/04 16:09:49 manu Exp $ */
+/* $Id: ratelimit.c,v 1.5 2012/09/20 08:31:49 manu Exp $ */
 
 /*
  * Copyright (c) 2010 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: ratelimit.c,v 1.4 2011/04/04 16:09:49 manu Exp $");
+__RCSID("$Id: ratelimit.c,v 1.5 2012/09/20 08:31:49 manu Exp $");
 #endif
 #endif
 
@@ -211,7 +211,7 @@ ratelimit_validate(ad, stage, ap, priv)
 
 	rc = ad->ratelimit_conf;
 	(void)gettimeofday(&now, NULL);
-	key = fstring_expand(priv, priv->priv_cur_rcpt, rc->rc_key);
+	key = fstring_expand(priv, priv->priv_cur_rcpt, rc->rc_key, NULL);
 
 	RATELIMIT_LOCK;
 

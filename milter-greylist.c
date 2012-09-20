@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.249 2012/09/19 02:04:38 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.250 2012/09/20 08:31:49 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2012 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.249 2012/09/19 02:04:38 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.250 2012/09/20 08:31:49 manu Exp $");
 #endif
 #endif
 
@@ -701,7 +701,7 @@ real_envrcpt(ctx, envrcpt)
 		char *ecode = "5.7.1";
 		char *msg = "Go away!";
 
-		aclstr = fstring_expand(priv, NULL, " (ACL %a)");
+		aclstr = fstring_expand(priv, NULL, " (ACL %a)", NULL);
 
 		if (!(priv->priv_sr.sr_whitelist & EXF_NOLOG)) {
 			mg_log(LOG_INFO, 
@@ -1062,7 +1062,7 @@ real_eom(ctx)
 
 		smtp_reply_free(&rcpt_sr);
 
-		aclstr = fstring_expand(priv, NULL, " (ACL %a)");
+		aclstr = fstring_expand(priv, NULL, " (ACL %a)", NULL);
 
 		iptostring(SA(&priv->priv_addr), priv->priv_addrlen, addrstr,
 		    sizeof(addrstr));
@@ -1136,7 +1136,7 @@ passed:
 		char *sep = ": ";
 
 		hdrname = fstring_expand(priv, NULL, 
-					 priv->priv_sr.sr_addheader);
+					 priv->priv_sr.sr_addheader, NULL);
 		if ((hdrvalue = strstr(hdrname, sep)) == NULL) {
 			mg_log(LOG_ERR, "bad header \"%s\"", hdrname);
 		} else {
@@ -1156,7 +1156,8 @@ passed:
 		size_t newlen;
 		struct line *l;
 
-		footer = fstring_expand(priv, NULL, priv->priv_sr.sr_addfooter);
+		footer = fstring_expand(priv, NULL, 
+					priv->priv_sr.sr_addfooter, NULL);
 		newlen = strlen(footer);
 		TAILQ_FOREACH(l, &priv->priv_body, l_list)
 			newlen += l->l_len;
@@ -1187,7 +1188,8 @@ passed:
 		struct line *l;
 		char *oldline;
 
-		tag = fstring_expand(priv, NULL, priv->priv_sr.sr_subjtag);
+		tag = fstring_expand(priv, NULL, 
+				     priv->priv_sr.sr_subjtag, NULL);
 		oldline = NULL;
 
 		TAILQ_FOREACH(l, &priv->priv_header, l_list) {
@@ -1240,7 +1242,7 @@ passed:
 
 		if (priv->priv_sr.sr_report) {
 			hdrstr = fstring_expand(priv, 
-			    NULL, priv->priv_sr.sr_report);
+			    NULL, priv->priv_sr.sr_report, NULL);
 		} else {
 			whystr[0] = '\0';
 			if (priv->priv_last_whitelist & EXF_DOMAIN) {
@@ -1342,7 +1344,7 @@ passed:
 			}
 
 			mystrlcat (whystr, ", not delayed by %V", HDRLEN);
-			hdrstr = fstring_expand(priv, NULL, whystr);
+			hdrstr = fstring_expand(priv, NULL, whystr, NULL);
 		}
 
 		smfi_addheader(ctx, HEADERNAME, hdrstr);
@@ -1356,10 +1358,10 @@ passed:
 
 		if (priv->priv_sr.sr_report)
 			hdrstr = fstring_expand(priv, 
-			    NULL, priv->priv_sr.sr_report);
+			    NULL, priv->priv_sr.sr_report, NULL);
 		else
 			hdrstr = fstring_expand(priv, 
-			    NULL, "Delayed for %E by %V");
+			    NULL, "Delayed for %E by %V", NULL);
 
 		smfi_addheader(ctx, HEADERNAME, hdrstr);
 		priv->priv_sr.sr_report_x = hdrstr;
@@ -1373,7 +1375,7 @@ out:
 		char *sep = ": ";
 
 		hdrname = fstring_expand(priv, NULL, 
-					 priv->priv_sr.sr_addheader);
+					 priv->priv_sr.sr_addheader, NULL);
 		if ((hdrvalue = strstr(hdrname, sep)) == NULL) {
 			mg_log(LOG_ERR, "bad header \"%s\"", hdrname);
 		} else {
@@ -2281,7 +2283,7 @@ log_and_report_greylisting(ctx, priv, rcpt)
 	else
 		delayed_rj = "";
 
-	aclstr = fstring_expand(priv, NULL, " (ACL %a)");
+	aclstr = fstring_expand(priv, NULL, " (ACL %a)", NULL);
 
 	if (!(priv->priv_sr.sr_whitelist & EXF_NOLOG)) {
 		mg_log(LOG_INFO, 
@@ -2498,14 +2500,21 @@ add_recipient(priv, rcpt)
 }
 
 static void
-mystrncat(s, append, slenmax)
+mystrncat(s, append, slenmax, cv)
 	char **s;
 	char *append;
 	size_t *slenmax;
+	char *(*cv)(char *);
 {
+	char *append_esc = NULL;
 	char *str = *s;
 	size_t alen;
 	size_t slen;
+
+	if (cv != NULL) {
+		if ((append_esc = cv(append)) != NULL)
+			append = append_esc;
+	}
 
 	slen = strlen(*s);
 	alen = strlen(append);
@@ -2526,6 +2535,9 @@ mystrncat(s, append, slenmax)
 
 	memcpy(str + slen, append, alen);
 	str[slen + alen] = '\0';
+
+	if (cv && append_esc)
+		free(append_esc);
 
 	return;
 }
@@ -2620,10 +2632,11 @@ domain_only(out, in, len)
 }
 
 char *
-fstring_expand(priv, rcpt, fstring)
+fstring_expand(priv, rcpt, fstring, cv)
 	struct mlfi_priv *priv;
 	char *rcpt;
 	const char *fstring;
+	char *(*cv)(char *);
 {
 	size_t offset;
 	char *outstr;
@@ -2674,7 +2687,7 @@ fstring_expand(priv, rcpt, fstring)
 
 			skip_until_brace_close = 0;
 			ptok = cp + 1;
-			mystrncat(&outstr, ptok, &outmaxlen);
+			mystrncat(&outstr, ptok, &outmaxlen, NULL);
 			continue;
 		}
 
@@ -2684,7 +2697,7 @@ fstring_expand(priv, rcpt, fstring)
 		if (tmpstrp != NULL) {
 			tmpstrp = NULL;
 			if (fstring[0] != '%') {
-				mystrncat(&outstr, ptok, &outmaxlen);
+				mystrncat(&outstr, ptok, &outmaxlen, NULL);
 				continue;
 			}
 		}
@@ -2698,21 +2711,21 @@ fstring_expand(priv, rcpt, fstring)
 
 		switch (*ptok) {
 		case 'h':	/* Hello string */
-			mystrncat(&outstr, priv->priv_helo, &outmaxlen);
+			mystrncat(&outstr, priv->priv_helo, &outmaxlen, cv);
 			break;
 		case 'd':	/* Sender machine DNS name */
-			mystrncat(&outstr, priv->priv_hostname, &outmaxlen);
+			mystrncat(&outstr, priv->priv_hostname, &outmaxlen, cv);
 			break;
 		case 'f':	/* Sender e-mail */
 			mystrncat(&outstr, 
 			    strip_brackets(tmpaddr, priv->priv_from, ADDRLEN), 
-			    &outmaxlen);
+			    &outmaxlen, cv);
 			break;
 		case 'r':	/* Recipient e-mail */
 			if (rcpt != NULL)
 				mystrncat(&outstr, 
 					strip_brackets(tmpaddr, rcpt, ADDRLEN), 
-					&outmaxlen);
+					&outmaxlen, cv);
 			break;
 		case 'm': 	/* mailbox part of sender or receiver e-mail */
 				/* Or machine part of DNS address */
@@ -2724,21 +2737,21 @@ fstring_expand(priv, rcpt, fstring)
 					mbox_only(tmpaddr, 
 					      rcpt, 
 					      ADDRLEN), 
-					&outmaxlen);
+					&outmaxlen, cv);
 				break;
 			case 'f':	/* Sender */
 				mystrncat(&outstr, 
 				    	mbox_only(tmpaddr, 
 					      priv->priv_from, 
 					      ADDRLEN), 
-					&outmaxlen);
+					&outmaxlen, cv);
 				break;
 			case 'd':	/* DNS name */
 				mystrncat(&outstr, 
 				    	machine_only(tmpaddr, 
 					      priv->priv_hostname, 
 					      ADDRLEN), 
-					&outmaxlen);
+					&outmaxlen, cv);
 				break;
 			default:
 				fstr_len = 0;
@@ -2755,21 +2768,21 @@ fstring_expand(priv, rcpt, fstring)
 					site_only(tmpaddr, 
 					      rcpt, 
 					      ADDRLEN), 
-					&outmaxlen);
+					&outmaxlen, cv);
 				break;
 			case 'f':	/* Sender */
 				mystrncat(&outstr, 
 				    	site_only(tmpaddr, 
 					      priv->priv_from, 
 					      ADDRLEN), 
-					&outmaxlen);
+					&outmaxlen, cv);
 				break;
 			case 'd':	/* DNS name */
 				mystrncat(&outstr, 
 				    	domain_only(tmpaddr, 
 					      priv->priv_hostname, 
 					      ADDRLEN), 
-					&outmaxlen);
+					&outmaxlen, cv);
 				break;
 			default:
 				fstr_len = 0;
@@ -2781,7 +2794,7 @@ fstring_expand(priv, rcpt, fstring)
 
 			iptostring(SA(&priv->priv_addr),
 			    priv->priv_addrlen, ipstr, sizeof(ipstr));
-			mystrncat(&outstr, ipstr, &outmaxlen);
+			mystrncat(&outstr, ipstr, &outmaxlen, cv);
 			break;
 		}
 		case 'D': {
@@ -2790,7 +2803,7 @@ fstring_expand(priv, rcpt, fstring)
 
 			mystrncat(&outstr, 
 				  dnsrbl_dump_matches(priv, dnsrbl, QSTRLEN),
-				  &outmaxlen);
+				  &outmaxlen, cv);
 #endif
 			break;
 		}
@@ -2803,7 +2816,7 @@ fstring_expand(priv, rcpt, fstring)
 				char buf[QSTRLEN + 1];
 				(void)snprintf(buf, sizeof(buf), "%g",
 				    (double)priv->priv_spamd_score10/10);
-				mystrncat(&outstr, buf, &outmaxlen);
+				mystrncat(&outstr, buf, &outmaxlen, cv);
 				break;
 				}
 			}
@@ -2881,7 +2894,7 @@ fstring_expand(priv, rcpt, fstring)
 			}
 
 			iptostring(SA(&addr), salen, ipstr, sizeof(ipstr));
-			mystrncat(&outstr, ipstr, &outmaxlen);
+			mystrncat(&outstr, ipstr, &outmaxlen, cv);
 			break;
 		}
 		case 'X': {
@@ -2907,12 +2920,12 @@ fstring_expand(priv, rcpt, fstring)
 			}
 
 			if (string != NULL)
-				mystrncat(&outstr, string, &outmaxlen);
+				mystrncat(&outstr, string, &outmaxlen, cv);
 			break;
 		}
 
 		case 'v':	/* milter-greylist version */
-			mystrncat(&outstr, PACKAGE_VERSION, &outmaxlen);
+			mystrncat(&outstr, PACKAGE_VERSION, &outmaxlen, cv);
 			break;
 
 		case 'G': {	/* GMT offset (e.g.: -0100) */
@@ -2921,7 +2934,7 @@ fstring_expand(priv, rcpt, fstring)
 
 			t = time(NULL);
 			gmtoffset(&t, tzstr, HDRLEN);
-			mystrncat(&outstr, tzstr, &outmaxlen);
+			mystrncat(&outstr, tzstr, &outmaxlen, cv);
 			break;
 		}
 		
@@ -2930,7 +2943,7 @@ fstring_expand(priv, rcpt, fstring)
 			if (priv->priv_ccode != NULL)
 				mystrncat(&outstr, 
 					  priv->priv_ccode, 
-					  &outmaxlen);
+					  &outmaxlen, cv);
 #else
 			fstr_len =  0;
 #endif
@@ -2951,7 +2964,7 @@ fstring_expand(priv, rcpt, fstring)
 			}
 
 			if (string != NULL)
-				mystrncat(&outstr, string, &outmaxlen);
+				mystrncat(&outstr, string, &outmaxlen, cv);
 			break;
 #else
 			fstr_len =  0;
@@ -2991,7 +3004,7 @@ fstring_expand(priv, rcpt, fstring)
 				break;
 			}
 				
-			mystrncat(&outstr, num, &outmaxlen);
+			mystrncat(&outstr, num, &outmaxlen, cv);
 			break;
 		}
 
@@ -3028,7 +3041,7 @@ fstring_expand(priv, rcpt, fstring)
 				break;
 			}
 
-			mystrncat(&outstr, num, &outmaxlen);
+			mystrncat(&outstr, num, &outmaxlen, cv);
 			break;
 		}
 
@@ -3067,7 +3080,7 @@ fstring_expand(priv, rcpt, fstring)
 			    local_ipstr(priv),
 #endif
 			    timestr, tzstr, tznamestr);
-			mystrncat(&outstr, output, &outmaxlen);
+			mystrncat(&outstr, output, &outmaxlen, cv);
 			break;
 		}
 
@@ -3107,7 +3120,7 @@ fstring_expand(priv, rcpt, fstring)
 			if (priv->priv_sr.sr_pmatch[nmatch - 1] != NULL)
 				mystrncat(&outstr, 
 				    priv->priv_sr.sr_pmatch[nmatch - 1],
-				    &outmaxlen);
+				    &outmaxlen, cv);
 
 			break;
 		}
@@ -3213,7 +3226,7 @@ fstring_expand(priv, rcpt, fstring)
 			if (symval == NULL)
 				symval = "";
 
-			mystrncat(&outstr, symval, &outmaxlen);
+			mystrncat(&outstr, symval, &outmaxlen, cv);
 
 			free(symname);
 			break;
@@ -3221,13 +3234,13 @@ fstring_expand(priv, rcpt, fstring)
 		case 'S': 	/* status returned to sendmail */
 			switch (priv->priv_sr.sr_retcode) {
 			case SMFIS_CONTINUE:
-				mystrncat(&outstr, "accept", &outmaxlen);
+				mystrncat(&outstr, "accept", &outmaxlen, cv);
 				break;
 			case SMFIS_TEMPFAIL:
-				mystrncat(&outstr, "tempfail", &outmaxlen);
+				mystrncat(&outstr, "tempfail", &outmaxlen, cv);
 				break;
 			case SMFIS_REJECT:
-				mystrncat(&outstr, "reject", &outmaxlen);
+				mystrncat(&outstr, "reject", &outmaxlen, cv);
 				break;
 			case -1: /* Not known */
 				break;
@@ -3244,9 +3257,9 @@ fstring_expand(priv, rcpt, fstring)
 			if (priv->priv_sr.sr_acl_line) {
 				snprintf(buf, sizeof(buf), "%d", 
 				   priv->priv_sr.sr_acl_line); 
-				mystrncat(&outstr, buf, &outmaxlen);
+				mystrncat(&outstr, buf, &outmaxlen, cv);
 			} else {
-				mystrncat(&outstr, "(none)", &outmaxlen);
+				mystrncat(&outstr, "(none)", &outmaxlen, cv);
 			}
 			break;
 		}	
@@ -3256,11 +3269,11 @@ fstring_expand(priv, rcpt, fstring)
 			if (priv->priv_sr.sr_acl_id) {
 				snprintf(buf, sizeof(buf), "%s", 
 				   priv->priv_sr.sr_acl_id); 
-				mystrncat(&outstr, buf, &outmaxlen);
+				mystrncat(&outstr, buf, &outmaxlen, cv);
 			} else if (priv->priv_sr.sr_acl_line) {
 				snprintf(buf, sizeof(buf), "%d", 
 				   priv->priv_sr.sr_acl_line); 
-				mystrncat(&outstr, buf, &outmaxlen);
+				mystrncat(&outstr, buf, &outmaxlen, cv);
 			}
 			break;
 		}	
@@ -3269,7 +3282,7 @@ fstring_expand(priv, rcpt, fstring)
 
 			snprintf(buf, sizeof(buf),
 				 "%ld", (long)priv->priv_sr.sr_tarpit);
-			mystrncat(&outstr, buf, &outmaxlen);
+			mystrncat(&outstr, buf, &outmaxlen, cv);
 			break;
 		}
 #if defined(USE_CURL) || defined(USE_LDAP)
@@ -3280,23 +3293,23 @@ fstring_expand(priv, rcpt, fstring)
 			case 'r':	/* recipent we got the prop from */
 				if ((priv->priv_prop_match == NULL) ||
 				    (priv->priv_prop_match->up_rcpt == NULL)) {
-					mystrncat(&outstr, "", &outmaxlen);
+					mystrncat(&outstr, "", &outmaxlen, cv);
 					break;
 				}
 
 				mystrncat(&outstr, 
 					  priv->priv_prop_match->up_rcpt,
-					  &outmaxlen);
+					  &outmaxlen, cv);
 				break;
 			case 'n':	/* property name */
 				mystrncat(&outstr, 
 					  priv->priv_prop_match->up_name,
-					  &outmaxlen);
+					  &outmaxlen, cv);
 				break;
 			case 'v':	/* property value */
 				mystrncat(&outstr, 
 					  priv->priv_prop_match->up_value,
-					  &outmaxlen);
+					  &outmaxlen, cv);
 				break;
 			default:
 				fstr_len = 0;
@@ -3343,14 +3356,14 @@ fstring_expand(priv, rcpt, fstring)
 			if ((value = prop_byname(priv, name)) == NULL)
 				value = "";
 
-			mystrncat(&outstr, value, &outmaxlen);
+			mystrncat(&outstr, value, &outmaxlen, cv);
 
 			free(name);
 			break;
 		}
 #endif
 		case '%':	/* Literal '%' */
-			mystrncat(&outstr, "%", &outmaxlen);
+			mystrncat(&outstr, "%", &outmaxlen, cv);
 			break;
 			
 		default:
@@ -3370,11 +3383,11 @@ fstring_expand(priv, rcpt, fstring)
 		 * Otherwise, skip the format string
 		 */
 		if (fstr_len == 0)
-			mystrncat(&outstr, "%", &outmaxlen);
+			mystrncat(&outstr, "%", &outmaxlen, NULL);
 		else
 			ptok += fstr_len;
 
-		mystrncat(&outstr, ptok, &outmaxlen);
+		mystrncat(&outstr, ptok, &outmaxlen, NULL);
 	}
 
 	free(tmpstr);
@@ -3615,7 +3628,7 @@ mg_setreply(ctx, priv, rcpt)
 	}
 
 	priv->priv_sr.sr_msg_x =
-		fstring_expand(priv, rcpt, priv->priv_sr.sr_msg);
+		fstring_expand(priv, rcpt, priv->priv_sr.sr_msg, NULL);
 	r = smfi_setreply(ctx,
 			priv->priv_sr.sr_code, priv->priv_sr.sr_ecode,
 			priv->priv_sr.sr_msg_x);

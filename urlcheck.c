@@ -1,4 +1,4 @@
-/* $Id: urlcheck.c,v 1.41 2012/02/24 02:24:47 manu Exp $ */
+/* $Id: urlcheck.c,v 1.42 2012/09/20 08:31:49 manu Exp $ */
 
 /*
  * Copyright (c) 2006-2007 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: urlcheck.c,v 1.41 2012/02/24 02:24:47 manu Exp $");
+__RCSID("$Id: urlcheck.c,v 1.42 2012/09/20 08:31:49 manu Exp $");
 #endif
 #endif
 
@@ -534,6 +534,66 @@ get_cnx(ue)
 	return cnx;
 }
 
+char *
+urlencode(str)
+	char *str;
+{
+	char *outstr;
+	size_t origlen, len;
+	char *cp;
+	char *dp;
+
+	origlen = strlen(str) + 1;
+	len = origlen;
+	for (cp = str; *cp; cp++) {
+		if (isalnum((int)*cp))
+			continue;
+
+		switch(*cp) {
+		case '-':
+		case '_':
+		case '.':
+		case '~':
+			break;
+		default:
+			len += 2;
+			break;
+		}
+	}
+
+	if (len == origlen)
+		return NULL;
+
+	if ((outstr = malloc(len)) == NULL) {
+		mg_log(LOG_ERR, "malloc failed");
+		exit (EX_OSERR);
+	}
+
+	dp = outstr;
+	for (cp = str; *cp; cp++) {
+		if (isalnum((int)*cp)) {
+			*dp++ = *cp;
+			continue;
+		}
+
+		switch(*cp) {
+		case '-':
+		case '_':
+		case '.':
+		case '~':
+			*dp++ = *cp;
+			break;
+		default:
+			(void)sprintf(dp, "%%%02X", *cp);
+			dp += 3;
+			break;
+		}
+	}
+
+	*dp = '\0';
+
+	return outstr;
+}
 
 int
 urlcheck_validate(ad, stage, ap, priv)
@@ -549,10 +609,13 @@ urlcheck_validate(ad, stage, ap, priv)
 	struct urlcheck_data ud;
 	struct urlcheck_cnx *cnx;
 	struct timeval tv1, tv2, tv3;
+	char *(*cv)(char *);
 
 	rcpt = priv->priv_cur_rcpt;
 	ue = ad->urlcheck;
-	url = fstring_expand(priv, rcpt, ue->u_url);
+
+	cv = (ue->u_flags & U_NOENCODE) ? NULL : *urlencode;
+	url = fstring_expand(priv, rcpt, ue->u_url, cv);
 
 	if (conf.c_debug) {
 		mg_log(LOG_DEBUG, "checking \"%s\"\n", url);

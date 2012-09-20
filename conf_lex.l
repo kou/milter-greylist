@@ -94,6 +94,8 @@ postmsg		[Pp][Oo][Ss][Tt][Mm][Ss][Gg]
 getprop		[Gg][Ee][Tt][Pp][Rr][Oo][Pp]
 fork		[Ff][Oo][Rr][Kk]
 clear		[Cc][Ll][Ee][Aa][Rr]
+noencode	[Nn][Oo][Ee][Nn][Cc][Oo][Dd][Ee]
+noescape	[Nn][Oo][Ee][Ss][Cc][Aa][Pp][Ee]
 unset		[Uu][Nn][Ss][Ee][Tt]
 list		[Ll][Ii][Ss][Tt]
 flushaddr	[Ff][Ll][Uu][Ss][Hh][Aa][Dd][Dd][Rr]
@@ -176,7 +178,7 @@ data		[Dd][Aa][Tt][Aa]
 	#ifndef HAVE_BROKEN_RCSID
 	#include <sys/cdefs.h>
 	#ifdef __RCSID
-	__RCSID("$Id: conf_lex.l,v 1.103 2012/09/19 02:04:38 manu Exp $");
+	__RCSID("$Id: conf_lex.l,v 1.104 2012/09/20 08:31:49 manu Exp $");
 	#endif
 	#endif
 	#endif
@@ -265,6 +267,8 @@ data		[Dd][Aa][Tt][Aa]
 {postmsg}	{ return POSTMSG; }
 {getprop}	{ return GETPROP; }
 {clear}		{ return CLEAR; }
+{noencode}	{ return NOENCODE; }
+{noescape}	{ return NOESCAPE; }
 {fork}		{ return FORK; }
 {unset}  	{ return UNSET; }
 {list}  	{ return LIST; }

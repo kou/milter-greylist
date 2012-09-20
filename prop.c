@@ -1,4 +1,4 @@
-/* $Id: prop.c,v 1.9 2012/09/19 02:04:38 manu Exp $ */
+/* $Id: prop.c,v 1.10 2012/09/20 08:31:49 manu Exp $ */
 
 /*
  * Copyright (c) 2006-2012 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: prop.c,v 1.9 2012/09/19 02:04:38 manu Exp $");
+__RCSID("$Id: prop.c,v 1.10 2012/09/20 08:31:49 manu Exp $");
 #endif
 #endif
 
@@ -140,7 +140,7 @@ prop_string_validate(ad, stage, ap, priv)
 	int retval = 0;
 
 	upd = ad->prop->upd_data;
-	string = fstring_expand(priv, NULL, upd->string);
+	string = fstring_expand(priv, NULL, upd->string, NULL);
 
 	LIST_FOREACH(up, &priv->priv_prop, up_list) {
 		if (strcasecmp(ad->prop->upd_name, up->up_name) != 0)

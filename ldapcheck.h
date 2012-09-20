@@ -1,4 +1,4 @@
-/* $Id: ldapcheck.h,v 1.5 2012/02/21 05:53:44 manu Exp $ */
+/* $Id: ldapcheck.h,v 1.6 2012/09/20 08:31:49 manu Exp $ */
 
 /*
  * Copyright (c) 2008-2012 Emmanuel Dreyfus
@@ -46,8 +46,9 @@ struct ldapcheck_entry {
 };   
 
 /* For lce_flags */
-#define L_CLEARPROP     0x4
-#define L_DOMATCH	0x8
+#define L_CLEARPROP     0x04
+#define L_DOMATCH	0x08
+#define L_NOESCAPE	0x10
  
 extern int ldapcheck_gflags;
 

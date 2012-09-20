@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.h,v 1.91 2012/09/19 02:04:38 manu Exp $ */
+/* $Id: milter-greylist.h,v 1.92 2012/09/20 08:31:49 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2012 Emmanuel Dreyfus
@@ -262,7 +262,7 @@ int main(int, char **);
 void mg_log(int, char *, ...);
 char *strncpy_rmsp(char *, char *, size_t);
 char *fstring_expand(struct mlfi_priv *, 
-    char *, const char *);
+    char *, const char *, char *(*)(char *));
 char *fstring_escape(char *);
 void mkparentdir(char *, mode_t);
 

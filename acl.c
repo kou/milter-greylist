@@ -1,4 +1,4 @@
-/* $Id: acl.c,v 1.104 2012/09/19 02:04:38 manu Exp $ */
+/* $Id: acl.c,v 1.105 2012/09/20 08:31:49 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2012 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: acl.c,v 1.104 2012/09/19 02:04:38 manu Exp $");
+__RCSID("$Id: acl.c,v 1.105 2012/09/20 08:31:49 manu Exp $");
 #endif
 #endif
 
@@ -2347,7 +2347,7 @@ acl_filter(stage, ctx, priv)
 			ADD_REASON(whystr, "this is the default action");
 		}
 		iptostring(sa, salen, addrstr, sizeof(addrstr));
-		aclstr = fstring_expand(priv, NULL, "%a");
+		aclstr = fstring_expand(priv, NULL, "%a", NULL);
 		snprintf(tmpstr, sizeof(tmpstr),
 		    "(from=%s, rcpt=%s, addr=%s[%s]) ACL %s", from, 
 		    (cur_rcpt[0] != '\0') ? cur_rcpt : "(nil)",

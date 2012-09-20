@@ -1,4 +1,4 @@
-/* $Id: urlcheck.h,v 1.14 2008/08/03 05:00:06 manu Exp $ */
+/* $Id: urlcheck.h,v 1.15 2012/09/20 08:31:49 manu Exp $ */
 
 /*
  * Copyright (c) 2006-2007 Emmanuel Dreyfus
@@ -51,10 +51,11 @@ struct urlcheck_entry {
 };
 
 /* For u_flags */
-#define U_POSTMSG	0x1
-#define U_GETPROP	0x2
-#define U_CLEARPROP	0x4
+#define U_POSTMSG	0x01
+#define U_GETPROP	0x02
+#define U_CLEARPROP	0x04
 #define U_FORK		0x10
+#define U_NOENCODE	0x20
 
 #define URLCHECK_HELPER_TIMEOUT 60
 

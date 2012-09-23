@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.250 2012/09/20 08:31:49 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.251 2012/09/23 05:03:01 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2012 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.250 2012/09/20 08:31:49 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.251 2012/09/23 05:03:01 manu Exp $");
 #endif
 #endif
 
@@ -1196,7 +1196,7 @@ passed:
 			if (strncmp(l->l_line, subjhdr, subjhdrlen) == 0) {
 				size_t oldlinelen;
 
-				oldline = l->l_line + sizeof(subjhdr);
+				oldline = l->l_line + subjhdrlen;
 				oldlinelen = strlen(oldline);
 				while (!isprint((int)oldline[oldlinelen]))
 					oldline[oldlinelen--] = '\0';
@@ -1208,20 +1208,21 @@ passed:
 			size_t newlen;
 			char *newline;
 
-			newlen = strlen(tag) + strlen(oldline) + 1;
+			newlen = subjhdrlen + strlen(tag) + strlen(oldline) + 1;
 			if ((newline = malloc(newlen)) == NULL)
 				mg_log(LOG_ERR, "malloc failed");
 
 			newline[0] = '\0';
+			(void)strcat(newline, subjhdr);
 			(void)strcat(newline, tag);
-			(void)strcat(newline, l->l_line);
+			(void)strcat(newline, oldline);
 
 			free(l->l_line);
 			l->l_line = newline;
 			l->l_len = newlen;
 
-			if (smfi_chgheader(ctx, "Subject", 
-					   1, newline) != MI_SUCCESS)
+			if (smfi_chgheader(ctx, "Subject", 1, 
+					   newline + subjhdrlen) != MI_SUCCESS)
 				mg_log(LOG_WARNING, "smfi_chgheader failed");
 		} 
 

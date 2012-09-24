@@ -1,4 +1,4 @@
-/* $Id: ldapcheck.c,v 1.15 2012/09/20 08:31:49 manu Exp $ */
+/* $Id: ldapcheck.c,v 1.16 2012/09/24 14:14:19 manu Exp $ */
 
 /*
  * Copyright (c) 2008-2012 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: ldapcheck.c,v 1.15 2012/09/20 08:31:49 manu Exp $");
+__RCSID("$Id: ldapcheck.c,v 1.16 2012/09/24 14:14:19 manu Exp $");
 #endif
 #endif
 #include <ctype.h>
@@ -355,15 +355,30 @@ ldapescape(str)
 	origlen = strlen(str) + 1;
 	len = origlen;
 	for (cp = str; *cp; cp++) {
+		if (!isgraph((int)*cp)) {
+			len += 2;
+			continue;
+		}
+
 		switch(*cp) {
-		case '?':
+		case '"':
 		case '%':
+		case '<':
+		case '>':
+		case '?':
+		case '^':
+		case '`':
+		case '{':
+		case '|':
+		case '}':
+			len += 2;
+			break;
 		case '*':
 		case '(':
 		case ')':
 		case '\\':
-		case '/':
-			len += 2;
+			len += 4;
+			break;
 		default:
 			break;
 		}
@@ -379,9 +394,23 @@ ldapescape(str)
 
 	dp = outstr;
 	for (cp = str; *cp; cp++) {
+		if (!isgraph((int)*cp)) {
+			(void)sprintf(dp, "%%%02X", *cp);
+			dp += 3;
+			continue;
+		}
+
 		switch(*cp) {
+		case '"':
 		case '%':
+		case '<':
+		case '>':
 		case '?':
+		case '^':
+		case '`':
+		case '{':
+		case '|':
+		case '}':
 			(void)sprintf(dp, "%%%02X", *cp);
 			dp += 3;
 			break;
@@ -389,8 +418,8 @@ ldapescape(str)
 		case '(':
 		case ')':
 		case '\\':
-			(void)sprintf(dp, "\\%02x", *cp);
-			dp += 3;
+			(void)sprintf(dp, "%%5c%02x", *cp);
+			dp += 5;
 			break;
 		default:
 			*dp++ = *cp;

@@ -1,5 +1,6 @@
 4.4a4
 	subjtag fix
+	better handling of ldap escapes in substitution strings
 4.4a3
 	buildmx and builddkim for RPM, fix libsm dependency (Rudy Eschauzier)
 	Improve regex examples in documentation (Denis Solovyov)

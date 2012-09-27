@@ -1,4 +1,4 @@
-/* $Id: prop.c,v 1.10 2012/09/20 08:31:49 manu Exp $ */
+/* $Id: prop.c,v 1.11 2012/09/27 18:10:04 manu Exp $ */
 
 /*
  * Copyright (c) 2006-2012 Emmanuel Dreyfus
@@ -36,7 +36,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID
-__RCSID("$Id: prop.c,v 1.10 2012/09/20 08:31:49 manu Exp $");
+__RCSID("$Id: prop.c,v 1.11 2012/09/27 18:10:04 manu Exp $");
 #endif
 #endif
 
@@ -261,7 +261,7 @@ prop_opnum_validate(ad, stage, ap, priv)
 			break;
 #ifdef USE_SPAMD
 		case AONP_SPAMD:
-			val1 = priv_spamd_score10;
+			val1 = priv->priv_spamd_score10;
 			break;
 #endif /* USE_SPAMD */
 		default:

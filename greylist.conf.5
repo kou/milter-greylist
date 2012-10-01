@@ -1,5 +1,5 @@
 .\"
-.\" $Id: greylist.conf.5,v 1.112 2012/06/13 08:13:02 manu Exp $
+.\" $Id: greylist.conf.5,v 1.113 2012/10/01 07:27:21 manu Exp $
 .\"
 .\" Copyright (c) 2004-2012 Emmanuel Dreyfus
 .\" All rights reserved.
@@ -793,47 +793,50 @@ The ACL will match if any of the above key is returned:
 .I milterGreylistStatus
 is not mandatory.
 .PP
-If you use an URL check in a DATA stage ACL, you can post the message header
-and body to the URL. This is done by appending the
+Optional keywords can be appended to a 
+.I urlcheck
+definition:
+.TP
 .I postmsg
-keyword to the 
-.I urlcheck 
-statement, like in the example above:
+On DATA-stage ACL, This causes the message to be sent
+(up to
+.I maxpeek
+bytes) in a POST request. Here is an example:
 .IP
   urlcheck "extfilter" "http://www.example.net/f.cgi" 5 postmsg
 
   dacl blacklist urlcheck "extfilter"
   dacl whitelist default
 .PP
-It is also possible to gather the properties returned by the URL and reuse
-them in the ACL. This behavior is enabled by the
+.TP
 .I getprop
-keyword at the end of 
-.I urlcheck 
-definition. If this option is enabled, the gathered properties can be 
-accessed in the current and following ACL by prefixing them by a dollar ($).
-If the 
+Gather the properties returned by the URL and reuse them in the ACL.
+The gathered properties can be accessed in the current and following ACL 
+by prefixing them by a dollar ($).
+.TP
 .I clear
-keyword is added, then properties will be cleaned up before handling a new
-recipient. This avoids properties for several recipients to mix.
-The
+This causes gathered properties to be cleared on each new recipient. 
+This avoids properties for several recipients to mix.
+.TP
 .I fork
-keyword instructs 
+Tells
 .B milter-greylist(8)
 to fork a separate instance of itself for performing the queries. Use it if 
 you encounter thread-safety problems. 
 .I fork
 is not compatible with
 .I postmsg\fR.
-The ldapcheck clause never match. It just fetches properties, causing a
-temporary failure if the LDAP directory is unreachable. In order to 
-actually match when an object if returned by the LDAP directory, append
-the
+.TP
 .I domatch
-keyword. The 
+Cause the ldapcheck clause to be evaluated in ACL. Default behavior is
+to ignore the result and just fecth properties, except if the LDAP 
+directory is unreachecable, in which case a temporary failure occurs.
+The 
 .I fixldapcheck
-gloabal settings wan also be used to globaly cause 
+gloabal settings may also be used to globaly cause all
 .I ldapcheck
+and
+.I urlcheck
 clauses to match.
 .PP
 Here is an example that will use various DNSRBL depending on a per-recipient
@@ -858,8 +861,9 @@ If milter-greylist was built with --with-openldap, then you can also use
 .I ldapcheck
 for pulling information from an LDAP directory. This works exactly like
 .I urlcheck\fR,
-except that properties are always collected: the only available option is 
-.I clear\fR.
+except that properties are always collected: The
+.I getprop
+option is implicit.
 .PP
 A list of LDAP URL to use can be specified with the
 .I ldapconf 

@@ -1,3 +1,5 @@
+4.4rc2
+	Attempt to apply subjtag even if message is bigger than maxpeek
 4.4rc1
 	Fix build --with-spamd
 	Man page layout improvements

@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.251 2012/09/23 05:03:01 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.252 2012/10/02 09:20:31 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2012 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.251 2012/09/23 05:03:01 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.252 2012/10/02 09:20:31 manu Exp $");
 #endif
 #endif
 
@@ -1180,8 +1180,7 @@ passed:
 	}
 
 	/* Add subject tag if we have the whole message */
-	if (priv->priv_sr.sr_subjtag && 
-	    (priv->priv_msgcount <= priv->priv_maxpeek)) {
+	if (priv->priv_sr.sr_subjtag) {
 		const char const subjhdr[] = "Subject: ";
 		size_t subjhdrlen = sizeof(subjhdr) - 1;
 		char *tag;

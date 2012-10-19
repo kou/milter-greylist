@@ -1,3 +1,5 @@
+4.4.1
+	Make sure socket ownership will not cause sendmail to complain
 4.4
 	Attempt to apply subjtag even if message is bigger than maxpeek
 4.4rc1

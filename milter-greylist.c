@@ -1,4 +1,4 @@
-/* $Id: milter-greylist.c,v 1.252 2012/10/02 09:20:31 manu Exp $ */
+/* $Id: milter-greylist.c,v 1.253 2012/10/19 03:57:39 manu Exp $ */
 
 /*
  * Copyright (c) 2004-2012 Emmanuel Dreyfus
@@ -34,7 +34,7 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #ifdef __RCSID  
-__RCSID("$Id: milter-greylist.c,v 1.252 2012/10/02 09:20:31 manu Exp $");
+__RCSID("$Id: milter-greylist.c,v 1.253 2012/10/19 03:57:39 manu Exp $");
 #endif
 #endif
 
@@ -1903,6 +1903,16 @@ main(argc, argv)
 				    conf.c_pidfile, pw->pw_name, gr->gr_name,
 				    strerror(errno));
 		}
+
+ 		/* 
+ 		 * chown the socket so that sendmail does not complain
+ 		 */
+		if (chown(conf.c_socket, pw->pw_uid, pw->pw_gid) != 0)
+			mg_log(LOG_WARNING, "%s: cannot change \"%s\""
+			    " ownership to %s/%s: %s", argv[0], 
+			    conf.c_socket, pw->pw_name, gr->gr_name,
+			    strerror(errno));
+
 
 		if (setgid(pw->pw_gid) != 0 ||
 		    setegid(pw->pw_gid) != 0) {
